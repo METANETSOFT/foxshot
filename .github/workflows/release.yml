@@ -164,15 +164,6 @@ jobs:
           tag_name: ${{ github.event.inputs.tag || github.ref_name }}
           files: dist/*.dmg
           fail_on_unmatched_files: true
-          body: |
-            **The macOS builds are ad-hoc signed and not notarized.** After dragging
-            `FoxShot.app` into `/Applications`, clear the quarantine attribute once:
-
-            ```sh
-            xattr -cr /Applications/FoxShot.app
-            ```
-
-            The app then opens normally.
 
   windows:
     name: Windows (zip, msi)
@@ -208,16 +199,21 @@ jobs:
         shell: pwsh
         run: |
           $version = $env:VERSION.TrimStart('v')
-          Push-Location crates/foxshot-app
-          try {
-            cargo wix --no-build `
-              --output "$env:GITHUB_WORKSPACE/dist/foxshot-$version-win-x86_64.msi"
-          } finally {
-            Pop-Location
-          }
-      - name: Upload release assets
+          cargo wix -p foxshot-app --no-build --nocapture `
+            --output "$env:GITHUB_WORKSPACE/dist/foxshot-$version-win-x86_64.msi"
+      - name: Upload zip
+        # Independent of the msi step: a failing installer must not take the
+        # portable build down with it.
+        if: always()
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.tag || github.ref_name }}
-          files: dist/*
-          fail_on_unmatched_files: true
+          files: dist/*.zip
+          fail_on_unmatched_files: false
+      - name: Upload msi
+        if: always()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          files: dist/*.msi
+          fail_on_unmatched_files: false
