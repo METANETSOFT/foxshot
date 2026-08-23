@@ -1,0 +1,43 @@
+{
+  "direction": "TB",
+  "ranksep": 0.9,
+  "nodes": [
+    {"id": "pipe", "label": "CapturePipeline", "group": "core", "width": 150},
+    {"id": "doc", "label": "AnnotationDocument", "group": "core", "width": 170},
+    {"id": "annotation", "label": "Annotation trait — 17 mark types", "group": "core", "width": 200},
+    {"id": "finding", "label": "Finding", "group": "core"},
+    {"id": "queue", "label": "UploadQueue", "group": "core"},
+    {"id": "library", "label": "Library", "group": "core"},
+    {"id": "registry", "label": "ModuleRegistry", "group": "core", "width": 140},
+    {"id": "update", "label": "UpdateChecker", "group": "core", "width": 140},
+    {"id": "settings", "label": "Settings + Hotkeys", "group": "core", "width": 160},
+    {"id": "capture", "label": "ScreenCapture", "group": "core::platform (traits the adapters implement)", "width": 140},
+    {"id": "screen", "label": "ScreenService (screens, DPI)", "group": "core::platform (traits the adapters implement)", "width": 200},
+    {"id": "perm", "label": "PermissionService", "group": "core::platform (traits the adapters implement)", "width": 150},
+    {"id": "hotkey", "label": "HotkeyService", "group": "core::platform (traits the adapters implement)", "width": 140},
+    {"id": "clip", "label": "ClipboardService", "group": "core::platform (traits the adapters implement)", "width": 150},
+    {"id": "notif", "label": "NotificationService", "group": "core::platform (traits the adapters implement)", "width": 160},
+    {"id": "fetch", "label": "Fetch (HTTP transfer)", "group": "core::platform (traits the adapters implement)", "width": 170},
+    {"id": "chrome", "label": "ChromeStyle (appearance)", "group": "core::platform (traits the adapters implement)", "width": 180},
+    {"id": "paths", "label": "Paths", "group": "core::platform (traits the adapters implement)"}
+  ],
+  "edges": [
+    {"source": "pipe", "target": "perm", "label": "gate: no capture without permission"},
+    {"source": "pipe", "target": "screen", "label": "queries screens and scales"},
+    {"source": "pipe", "target": "capture", "label": "produces Frame"},
+    {"source": "pipe", "target": "doc", "label": "hands off to the editor"},
+    {"source": "doc", "target": "annotation", "label": "holds the marks"},
+    {"source": "doc", "target": "finding", "label": "each mark writes one row"},
+    {"source": "doc", "target": "library", "label": "save"},
+    {"source": "doc", "target": "queue", "label": "upload"},
+    {"source": "queue", "target": "fetch", "label": "transfer comes from the adapter"},
+    {"source": "queue", "target": "clip", "label": "link to clipboard"},
+    {"source": "queue", "target": "notif", "label": "report the result"},
+    {"source": "library", "target": "paths", "label": "Documents/FoxShot"},
+    {"source": "registry", "target": "update", "label": "returns installed versions"},
+    {"source": "update", "target": "fetch", "label": "fetches updates.json"},
+    {"source": "update", "target": "notif", "label": "new version notification"},
+    {"source": "settings", "target": "hotkey", "label": "binds global hotkeys"},
+    {"source": "settings", "target": "chrome", "label": "picks the platform shell"}
+  ]
+}

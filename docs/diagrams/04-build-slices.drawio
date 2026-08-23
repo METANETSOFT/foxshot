@@ -4,37 +4,37 @@
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <mxCell id="s0" value="S0 — Workspace + Core iskeleti&#xa;DONE: cargo check tüm crate'lerde 0 döner" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="s0" value="S0 — Workspace + Core skeleton&#xa;DONE: cargo check returns 0 in all crates" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="0" y="0" width="460" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="s1" value="S1 — geometry, Frame, platform trait'leri + NullPlatform test impl&#xa;DONE: cargo test -p foxshot-core yeşil" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="s1" value="S1 — geometry, Frame, platform traits + NullPlatform test impl&#xa;DONE: cargo test -p foxshot-core green" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="0" y="100" width="460" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="s2" value="S2 — İLK DİKEY DİLİM: Linux X11 tam ekran çekimi -&gt; PNG (CLI, UI yok)&#xa;DONE: foxshot capture --full -o out.png gerçek görüntü üretir" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="s2" value="S2 — FIRST VERTICAL SLICE: Linux X11 full screen capture -&gt; PNG (CLI, no UI)&#xa;DONE: foxshot capture --full -o out.png produces a real image" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="0" y="190" width="460" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="s3" value="S3 — macOS adaptörü: ScreenCaptureKit + TCC preflight&#xa;DONE: aynı komut macOS'ta gerçek görüntü üretir, izin yoksa açıkça söyler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="s3" value="S3 — macOS adapter: ScreenCaptureKit + TCC preflight&#xa;DONE: same command produces a real image on macOS, says so clearly without permission" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="0" y="290" width="460" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="s4" value="S4 — wgpu borderless overlay + bölge sürükleme&#xa;DONE: sürüklenen dikdörtgen piksel doğru PNG verir, karışık DPI'da da" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="s4" value="S4 — wgpu borderless overlay + region drag&#xa;DONE: dragged rectangle yields pixel-correct PNG, even on mixed DPI" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="0" y="380" width="460" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="s5" value="S5 — AnnotationDocument + 5 temel işaret (dikdörtgen, ok, metin, numara, blur)&#xa;DONE: test Frame baytlarının değişmediğini kanıtlar (non-destructive)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="s5" value="S5 — AnnotationDocument + 5 basic marks (rectangle, arrow, text, number, blur)&#xa;DONE: test proves Frame bytes unchanged (non-destructive)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="0" y="480" width="460" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="s6" value="S6 — Yükleme: Cloudflare R2 target + doğrulama + link panoya&#xa;DONE: gerçek bucket'a yükler, dönen URL açılır" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="s6" value="S6 — Upload: Cloudflare R2 target + validation + link to clipboard&#xa;DONE: uploads to a real bucket, returned URL opens" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="0" y="580" width="460" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="s7" value="S7 — Kütüphane + menü çubuğu paneli (günlük yüzey)&#xa;DONE: kısayoldan linke kadar fareye dokunmadan tamamlanır" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="s7" value="S7 — Library + menu bar panel (daily surface)&#xa;DONE: hotkey to link without touching the mouse" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="0" y="670" width="460" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="s8" value="S8 — ModuleRegistry + updates.json kontrolü + bildirim&#xa;DONE: manifest sürümü yükseltilince panelde bildirim çıkar" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="s8" value="S8 — ModuleRegistry + updates.json check + notification&#xa;DONE: bumping the manifest version shows a panel notification" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="0" y="770" width="460" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="s9" value="S9 — Windows adaptörü&#xa;DONE: aynı Core, üçüncü platformda çekim + yükleme çalışır" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="s9" value="S9 — Windows adapter&#xa;DONE: same Core, capture + upload work on the third platform" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="0" y="860" width="460" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="s10" value="S10 — Kalan 12 işaret, efektler, video ve OCR modülleri&#xa;DONE: her modül ayrı sürümle kurulup kaldırılabilir" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="s10" value="S10 — Remaining 12 marks, effects, video and OCR modules&#xa;DONE: each module installs and removes with its own version" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="0" y="960" width="460" height="60" as="geometry"/>
         </mxCell>
         <mxCell id="e0" value="" style="html=1;rounded=0;" edge="1" parent="1" source="s0" target="s1">

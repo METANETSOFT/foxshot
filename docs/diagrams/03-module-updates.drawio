@@ -4,10 +4,10 @@
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <mxCell id="u_start" value="Uygulama açılışı" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="u_start" value="App launch" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="180" y="0" width="150" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="u_load" value="ModuleRegistry.load()  — kurulu modüller + sürümleri" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="u_load" value="ModuleRegistry.load()  — installed modules + versions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="100" y="100" width="300" height="60" as="geometry"/>
         </mxCell>
         <mxCell id="u_check" value="UpdateChecker.check()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
@@ -16,55 +16,55 @@
         <mxCell id="u_get" value="GET raw.githubusercontent.com/.../updates.json" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="110" y="290" width="290" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="u_reach_q" value="Ulaşılabildi mi?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+        <mxCell id="u_reach_q" value="Reachable?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
           <mxGeometry x="190" y="380" width="130" height="80" as="geometry"/>
         </mxCell>
-        <mxCell id="u_offline" value="Çevrimdışı — son bilinen durumu göster" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="u_offline" value="Offline — show last known state" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="0" y="600" width="240" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="u_parse" value="UpdateManifest ayrıştır  {schema, core, adapters{}, modules{}}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="u_parse" value="Parse UpdateManifest  {schema, core, adapters{}, modules{}}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="200" y="500" width="330" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="u_compare" value="Sürümleri karşılaştır  (kurulu vs manifest)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="u_compare" value="Compare versions  (installed vs manifest)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="260" y="600" width="260" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="u_new_q" value="Yeni sürüm var mı?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+        <mxCell id="u_new_q" value="New version available?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
           <mxGeometry x="320" y="690" width="140" height="80" as="geometry"/>
         </mxCell>
-        <mxCell id="u_silent" value="Sessiz kal" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="u_silent" value="Stay silent" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="230" y="820" width="120" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="u_core_q" value="Core güncellemesi mi?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+        <mxCell id="u_core_q" value="Core update?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
           <mxGeometry x="370" y="810" width="150" height="80" as="geometry"/>
         </mxCell>
-        <mxCell id="u_confirm" value="Onay iste — üç platformu da etkiler, yeniden başlatma gerekir" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="u_confirm" value="Ask for approval — affects all three platforms, restart required" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="150" y="1160" width="330" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="u_compat_q" value="Modül core sürümüyle uyumlu mu?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+        <mxCell id="u_compat_q" value="Module compatible with core version?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
           <mxGeometry x="410" y="920" width="190" height="80" as="geometry"/>
         </mxCell>
-        <mxCell id="u_blocked" value="Engelli durum: 'Core &gt;= X gerekiyor'" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="u_blocked" value="Disabled state: 'Core &gt;= X required'" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="370" y="1250" width="220" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="u_auto_q" value="Otomatik güncelleme açık mı?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+        <mxCell id="u_auto_q" value="Auto-update enabled?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
           <mxGeometry x="550" y="1040" width="190" height="80" as="geometry"/>
         </mxCell>
-        <mxCell id="u_panel" value="Panelde bildirim: 'X modülü Y hazır'" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="u_panel" value="Panel notification: 'module X version Y ready'" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="530" y="1160" width="220" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="u_download" value="İndir" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="u_download" value="Download" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="610" y="1250" width="120" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="u_verify" value="İmzayı doğrula" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="u_verify" value="Verify signature" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="600" y="1350" width="140" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="u_sig_q" value="İmza geçerli mi?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+        <mxCell id="u_sig_q" value="Signature valid?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
           <mxGeometry x="600" y="1440" width="140" height="80" as="geometry"/>
         </mxCell>
-        <mxCell id="u_install" value="Kur -&gt; ModuleRegistry.bump()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="u_install" value="Install -&gt; ModuleRegistry.bump()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="380" y="1560" width="200" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="u_keep" value="Eski sürümü koru + nedeni bildir" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="u_keep" value="Keep old version + report reason" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="600" y="1560" width="210" height="60" as="geometry"/>
         </mxCell>
         <mxCell id="u_notify" value="NotificationService.notify()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
@@ -82,10 +82,10 @@
         <mxCell id="e3" value="" style="html=1;rounded=0;" edge="1" parent="1" source="u_get" target="u_reach_q">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="250" y="350"/><mxPoint x="250" y="370"/></Array></mxGeometry>
         </mxCell>
-        <mxCell id="e4" value="hayır" style="html=1;rounded=0;" edge="1" parent="1" source="u_reach_q" target="u_offline">
+        <mxCell id="e4" value="no" style="html=1;rounded=0;" edge="1" parent="1" source="u_reach_q" target="u_offline">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="200" y="460"/><mxPoint x="200" y="590"/></Array></mxGeometry>
         </mxCell>
-        <mxCell id="e5" value="evet" style="html=1;rounded=0;" edge="1" parent="1" source="u_reach_q" target="u_parse">
+        <mxCell id="e5" value="yes" style="html=1;rounded=0;" edge="1" parent="1" source="u_reach_q" target="u_parse">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="260" y="460"/><mxPoint x="260" y="490"/></Array></mxGeometry>
         </mxCell>
         <mxCell id="e6" value="" style="html=1;rounded=0;" edge="1" parent="1" source="u_parse" target="u_compare">
@@ -94,31 +94,31 @@
         <mxCell id="e7" value="" style="html=1;rounded=0;" edge="1" parent="1" source="u_compare" target="u_new_q">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="390" y="660"/><mxPoint x="390" y="680"/></Array></mxGeometry>
         </mxCell>
-        <mxCell id="e8" value="hayır" style="html=1;rounded=0;" edge="1" parent="1" source="u_new_q" target="u_silent">
+        <mxCell id="e8" value="no" style="html=1;rounded=0;" edge="1" parent="1" source="u_new_q" target="u_silent">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="340" y="770"/><mxPoint x="340" y="810"/></Array></mxGeometry>
         </mxCell>
-        <mxCell id="e9" value="evet" style="html=1;rounded=0;" edge="1" parent="1" source="u_new_q" target="u_core_q">
+        <mxCell id="e9" value="yes" style="html=1;rounded=0;" edge="1" parent="1" source="u_new_q" target="u_core_q">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="420" y="770"/><mxPoint x="420" y="800"/></Array></mxGeometry>
         </mxCell>
-        <mxCell id="e10" value="evet" style="html=1;rounded=0;" edge="1" parent="1" source="u_core_q" target="u_confirm">
+        <mxCell id="e10" value="yes" style="html=1;rounded=0;" edge="1" parent="1" source="u_core_q" target="u_confirm">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="390" y="890"/><mxPoint x="390" y="1150"/></Array></mxGeometry>
         </mxCell>
-        <mxCell id="e11" value="hayır" style="html=1;rounded=0;" edge="1" parent="1" source="u_core_q" target="u_compat_q">
+        <mxCell id="e11" value="no" style="html=1;rounded=0;" edge="1" parent="1" source="u_core_q" target="u_compat_q">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="470" y="890"/><mxPoint x="470" y="910"/></Array></mxGeometry>
         </mxCell>
-        <mxCell id="e12" value="hayır" style="html=1;rounded=0;" edge="1" parent="1" source="u_compat_q" target="u_blocked">
+        <mxCell id="e12" value="no" style="html=1;rounded=0;" edge="1" parent="1" source="u_compat_q" target="u_blocked">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="510" y="1000"/><mxPoint x="510" y="1240"/></Array></mxGeometry>
         </mxCell>
-        <mxCell id="e13" value="evet" style="html=1;rounded=0;" edge="1" parent="1" source="u_compat_q" target="u_auto_q">
+        <mxCell id="e13" value="yes" style="html=1;rounded=0;" edge="1" parent="1" source="u_compat_q" target="u_auto_q">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="570" y="1000"/><mxPoint x="570" y="1030"/></Array></mxGeometry>
         </mxCell>
-        <mxCell id="e14" value="hayır" style="html=1;rounded=0;" edge="1" parent="1" source="u_auto_q" target="u_panel">
+        <mxCell id="e14" value="no" style="html=1;rounded=0;" edge="1" parent="1" source="u_auto_q" target="u_panel">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="640" y="1120"/><mxPoint x="640" y="1150"/></Array></mxGeometry>
         </mxCell>
-        <mxCell id="e15" value="evet" style="html=1;rounded=0;" edge="1" parent="1" source="u_auto_q" target="u_download">
+        <mxCell id="e15" value="yes" style="html=1;rounded=0;" edge="1" parent="1" source="u_auto_q" target="u_download">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="760" y="1080"/><mxPoint x="780" y="1080"/><mxPoint x="780" y="1080"/><mxPoint x="780" y="1080"/><mxPoint x="780" y="1280"/><mxPoint x="780" y="1280"/><mxPoint x="780" y="1280"/><mxPoint x="740" y="1280"/></Array></mxGeometry>
         </mxCell>
-        <mxCell id="e16" value="kullanıcı basınca" style="html=1;rounded=0;" edge="1" parent="1" source="u_panel" target="u_download">
+        <mxCell id="e16" value="when the user presses" style="html=1;rounded=0;" edge="1" parent="1" source="u_panel" target="u_download">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="670" y="1220"/><mxPoint x="670" y="1240"/></Array></mxGeometry>
         </mxCell>
         <mxCell id="e17" value="" style="html=1;rounded=0;" edge="1" parent="1" source="u_download" target="u_verify">
@@ -127,10 +127,10 @@
         <mxCell id="e18" value="" style="html=1;rounded=0;" edge="1" parent="1" source="u_verify" target="u_sig_q">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="670" y="1410"/><mxPoint x="670" y="1430"/></Array></mxGeometry>
         </mxCell>
-        <mxCell id="e19" value="evet" style="html=1;rounded=0;" edge="1" parent="1" source="u_sig_q" target="u_install">
+        <mxCell id="e19" value="yes" style="html=1;rounded=0;" edge="1" parent="1" source="u_sig_q" target="u_install">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="550" y="1480"/><mxPoint x="480" y="1480"/><mxPoint x="480" y="1480"/><mxPoint x="480" y="1480"/><mxPoint x="480" y="1550"/></Array></mxGeometry>
         </mxCell>
-        <mxCell id="e20" value="hayır" style="html=1;rounded=0;" edge="1" parent="1" source="u_sig_q" target="u_keep">
+        <mxCell id="e20" value="no" style="html=1;rounded=0;" edge="1" parent="1" source="u_sig_q" target="u_keep">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="670" y="1520"/><mxPoint x="670" y="1550"/></Array></mxGeometry>
         </mxCell>
         <mxCell id="e21" value="" style="html=1;rounded=0;" edge="1" parent="1" source="u_install" target="u_notify">

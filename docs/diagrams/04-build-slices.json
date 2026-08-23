@@ -1,0 +1,28 @@
+{
+  "direction": "TB",
+  "nodes": [
+    {"id": "s0", "label": "S0 — Workspace + Core skeleton\nDONE: cargo check returns 0 in all crates", "width": 460, "height": 60},
+    {"id": "s1", "label": "S1 — geometry, Frame, platform traits + NullPlatform test impl\nDONE: cargo test -p foxshot-core green", "width": 460, "height": 60},
+    {"id": "s2", "label": "S2 — FIRST VERTICAL SLICE: Linux X11 full screen capture -> PNG (CLI, no UI)\nDONE: foxshot capture --full -o out.png produces a real image", "width": 460, "height": 60},
+    {"id": "s3", "label": "S3 — macOS adapter: ScreenCaptureKit + TCC preflight\nDONE: same command produces a real image on macOS, says so clearly without permission", "width": 460, "height": 60},
+    {"id": "s4", "label": "S4 — wgpu borderless overlay + region drag\nDONE: dragged rectangle yields pixel-correct PNG, even on mixed DPI", "width": 460, "height": 60},
+    {"id": "s5", "label": "S5 — AnnotationDocument + 5 basic marks (rectangle, arrow, text, number, blur)\nDONE: test proves Frame bytes unchanged (non-destructive)", "width": 460, "height": 60},
+    {"id": "s6", "label": "S6 — Upload: Cloudflare R2 target + validation + link to clipboard\nDONE: uploads to a real bucket, returned URL opens", "width": 460, "height": 60},
+    {"id": "s7", "label": "S7 — Library + menu bar panel (daily surface)\nDONE: hotkey to link without touching the mouse", "width": 460, "height": 60},
+    {"id": "s8", "label": "S8 — ModuleRegistry + updates.json check + notification\nDONE: bumping the manifest version shows a panel notification", "width": 460, "height": 60},
+    {"id": "s9", "label": "S9 — Windows adapter\nDONE: same Core, capture + upload work on the third platform", "width": 460, "height": 60},
+    {"id": "s10", "label": "S10 — Remaining 12 marks, effects, video and OCR modules\nDONE: each module installs and removes with its own version", "width": 460, "height": 60}
+  ],
+  "edges": [
+    {"source": "s0", "target": "s1"},
+    {"source": "s1", "target": "s2"},
+    {"source": "s2", "target": "s3"},
+    {"source": "s3", "target": "s4"},
+    {"source": "s4", "target": "s5"},
+    {"source": "s5", "target": "s6"},
+    {"source": "s6", "target": "s7"},
+    {"source": "s7", "target": "s8"},
+    {"source": "s8", "target": "s9"},
+    {"source": "s9", "target": "s10"}
+  ]
+}

@@ -4,49 +4,49 @@
       <root>
         <mxCell id="0"/>
         <mxCell id="1" parent="0"/>
-        <mxCell id="f_hotkey" value="Global kısayol  ⌘⇧4" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="f_hotkey" value="Global hotkey  ⌘⇧4" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="180" y="0" width="160" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="f_perm_q" value="İzin var mı?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+        <mxCell id="f_perm_q" value="Permission granted?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
           <mxGeometry x="200" y="100" width="120" height="80" as="geometry"/>
         </mxCell>
-        <mxCell id="f_wizard" value="İzin sihirbazı adımı" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="f_wizard" value="Permission wizard step" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="120" y="210" width="160" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="f_sysdlg" value="Sistem izin diyaloğu" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="f_sysdlg" value="System permission dialog" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="120" y="310" width="160" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="f_granted_q" value="Verildi mi?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+        <mxCell id="f_granted_q" value="Granted?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
           <mxGeometry x="140" y="400" width="120" height="80" as="geometry"/>
         </mxCell>
-        <mxCell id="f_focus_stop" value="Sadece-odak uyarısı + dur" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="f_focus_stop" value="Focus-only warning + stop" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="0" y="620" width="190" height="60" as="geometry"/>
         </mxCell>
         <mxCell id="f_begin" value="CapturePipeline.begin()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="230" y="520" width="170" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="f_enum" value="ScreenService.enumerate()  — karışık DPI normalize" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="f_enum" value="ScreenService.enumerate()  — normalize mixed DPI" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="210" y="620" width="280" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="f_overlay" value="CaptureOverlay  — ekran başına borderless pencere" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="f_overlay" value="CaptureOverlay  — one borderless window per screen" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="210" y="710" width="280" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="f_select" value="Bölge / pencere / ekran seçimi" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="f_select" value="Region / window / screen selection" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="240" y="810" width="210" height="60" as="geometry"/>
         </mxCell>
         <mxCell id="f_grab" value="ScreenCapture.grab(rect) -&gt; Frame(RGBA, scale)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="210" y="900" width="280" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="f_action_q" value="Çekim sonrası eylem?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+        <mxCell id="f_action_q" value="Post-capture action?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
           <mxGeometry x="270" y="1000" width="150" height="80" as="geometry"/>
         </mxCell>
         <mxCell id="f_docnew" value="AnnotationDocument::new(frame)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="340" y="1120" width="220" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="f_mark" value="İşaret koy -&gt; Finding satırı" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="f_mark" value="Place mark -&gt; Finding row" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="350" y="1210" width="190" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="f_store" value="Library.store()  -&gt; Belgeler/FoxShot" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="f_store" value="Library.store()  -&gt; Documents/FoxShot" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="220" y="1310" width="220" height="60" as="geometry"/>
         </mxCell>
         <mxCell id="f_clip" value="Clipboard.set_image()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
@@ -58,7 +58,7 @@
         <mxCell id="f_upload" value="UploadTarget.upload()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="480" y="1400" width="170" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="f_ok_q" value="Başarılı mı?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+        <mxCell id="f_ok_q" value="Successful?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
           <mxGeometry x="500" y="1500" width="120" height="80" as="geometry"/>
         </mxCell>
         <mxCell id="f_link" value="Link -&gt; Clipboard + Library.mark_uploaded" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
@@ -67,34 +67,34 @@
         <mxCell id="f_notify" value="NotificationService.notify()" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="280" y="1810" width="200" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="f_errclass" value="Hatayı sınıflandır: auth / net / boyut" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="f_errclass" value="Classify error: auth / net / size" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="490" y="1620" width="230" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="f_keep" value="Yerelde tut + neden + tekrar dene" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+        <mxCell id="f_keep" value="Keep local + reason + retry" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
           <mxGeometry x="530" y="1710" width="220" height="60" as="geometry"/>
         </mxCell>
-        <mxCell id="f_done" value="Bitti" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+        <mxCell id="f_done" value="Done" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
           <mxGeometry x="150" y="1900" width="120" height="60" as="geometry"/>
         </mxCell>
         <mxCell id="e0" value="" style="html=1;rounded=0;" edge="1" parent="1" source="f_hotkey" target="f_perm_q">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="260" y="60"/><mxPoint x="260" y="90"/></Array></mxGeometry>
         </mxCell>
-        <mxCell id="e1" value="hayır" style="html=1;rounded=0;" edge="1" parent="1" source="f_perm_q" target="f_wizard">
+        <mxCell id="e1" value="no" style="html=1;rounded=0;" edge="1" parent="1" source="f_perm_q" target="f_wizard">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="240" y="180"/><mxPoint x="240" y="200"/></Array></mxGeometry>
         </mxCell>
-        <mxCell id="e2" value="evet" style="html=1;rounded=0;" edge="1" parent="1" source="f_perm_q" target="f_begin">
+        <mxCell id="e2" value="yes" style="html=1;rounded=0;" edge="1" parent="1" source="f_perm_q" target="f_begin">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="300" y="180"/><mxPoint x="300" y="510"/></Array></mxGeometry>
         </mxCell>
-        <mxCell id="e3" value="neden anlatıldıktan sonra" style="html=1;rounded=0;" edge="1" parent="1" source="f_wizard" target="f_sysdlg">
+        <mxCell id="e3" value="after the reason is explained" style="html=1;rounded=0;" edge="1" parent="1" source="f_wizard" target="f_sysdlg">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="200" y="270"/><mxPoint x="200" y="300"/></Array></mxGeometry>
         </mxCell>
         <mxCell id="e4" value="" style="html=1;rounded=0;" edge="1" parent="1" source="f_sysdlg" target="f_granted_q">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="200" y="370"/><mxPoint x="200" y="390"/></Array></mxGeometry>
         </mxCell>
-        <mxCell id="e5" value="evet" style="html=1;rounded=0;" edge="1" parent="1" source="f_granted_q" target="f_begin">
+        <mxCell id="e5" value="yes" style="html=1;rounded=0;" edge="1" parent="1" source="f_granted_q" target="f_begin">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="250" y="480"/><mxPoint x="250" y="510"/></Array></mxGeometry>
         </mxCell>
-        <mxCell id="e6" value="hayır" style="html=1;rounded=0;" edge="1" parent="1" source="f_granted_q" target="f_focus_stop">
+        <mxCell id="e6" value="no" style="html=1;rounded=0;" edge="1" parent="1" source="f_granted_q" target="f_focus_stop">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="170" y="480"/><mxPoint x="170" y="610"/></Array></mxGeometry>
         </mxCell>
         <mxCell id="e7" value="" style="html=1;rounded=0;" edge="1" parent="1" source="f_begin" target="f_enum">
@@ -112,25 +112,25 @@
         <mxCell id="e11" value="" style="html=1;rounded=0;" edge="1" parent="1" source="f_grab" target="f_action_q">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="350" y="960"/><mxPoint x="350" y="990"/></Array></mxGeometry>
         </mxCell>
-        <mxCell id="e12" value="editör" style="html=1;rounded=0;" edge="1" parent="1" source="f_action_q" target="f_docnew">
+        <mxCell id="e12" value="editor" style="html=1;rounded=0;" edge="1" parent="1" source="f_action_q" target="f_docnew">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="380" y="1080"/><mxPoint x="380" y="1110"/></Array></mxGeometry>
         </mxCell>
-        <mxCell id="e13" value="kaydet" style="html=1;rounded=0;" edge="1" parent="1" source="f_action_q" target="f_store">
+        <mxCell id="e13" value="save" style="html=1;rounded=0;" edge="1" parent="1" source="f_action_q" target="f_store">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="310" y="1080"/><mxPoint x="310" y="1300"/></Array></mxGeometry>
         </mxCell>
-        <mxCell id="e14" value="kopyala" style="html=1;rounded=0;" edge="1" parent="1" source="f_action_q" target="f_clip">
+        <mxCell id="e14" value="copy" style="html=1;rounded=0;" edge="1" parent="1" source="f_action_q" target="f_clip">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="280" y="1080"/><mxPoint x="280" y="1200"/></Array></mxGeometry>
         </mxCell>
-        <mxCell id="e15" value="yükle (varsayılan)" style="html=1;rounded=0;" edge="1" parent="1" source="f_action_q" target="f_push">
+        <mxCell id="e15" value="upload (default)" style="html=1;rounded=0;" edge="1" parent="1" source="f_action_q" target="f_push">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="500" y="1040"/><mxPoint x="600" y="1040"/><mxPoint x="600" y="1040"/><mxPoint x="600" y="1040"/><mxPoint x="600" y="1300"/></Array></mxGeometry>
         </mxCell>
         <mxCell id="e16" value="" style="html=1;rounded=0;" edge="1" parent="1" source="f_docnew" target="f_mark">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="450" y="1180"/><mxPoint x="450" y="1200"/></Array></mxGeometry>
         </mxCell>
-        <mxCell id="e17" value="Yükle ve linki kopyala" style="html=1;rounded=0;" edge="1" parent="1" source="f_mark" target="f_push">
+        <mxCell id="e17" value="Upload and copy link" style="html=1;rounded=0;" edge="1" parent="1" source="f_mark" target="f_push">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="520" y="1270"/><mxPoint x="520" y="1300"/></Array></mxGeometry>
         </mxCell>
-        <mxCell id="e18" value="Kaydet" style="html=1;rounded=0;" edge="1" parent="1" source="f_mark" target="f_store">
+        <mxCell id="e18" value="Save" style="html=1;rounded=0;" edge="1" parent="1" source="f_mark" target="f_store">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="390" y="1270"/><mxPoint x="390" y="1300"/></Array></mxGeometry>
         </mxCell>
         <mxCell id="e19" value="" style="html=1;rounded=0;" edge="1" parent="1" source="f_push" target="f_upload">
@@ -139,10 +139,10 @@
         <mxCell id="e20" value="" style="html=1;rounded=0;" edge="1" parent="1" source="f_upload" target="f_ok_q">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="560" y="1460"/><mxPoint x="560" y="1490"/></Array></mxGeometry>
         </mxCell>
-        <mxCell id="e21" value="evet" style="html=1;rounded=0;" edge="1" parent="1" source="f_ok_q" target="f_link">
+        <mxCell id="e21" value="yes" style="html=1;rounded=0;" edge="1" parent="1" source="f_ok_q" target="f_link">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="490" y="1540"/><mxPoint x="480" y="1540"/><mxPoint x="480" y="1540"/><mxPoint x="480" y="1540"/><mxPoint x="480" y="1700"/></Array></mxGeometry>
         </mxCell>
-        <mxCell id="e22" value="hayır" style="html=1;rounded=0;" edge="1" parent="1" source="f_ok_q" target="f_errclass">
+        <mxCell id="e22" value="no" style="html=1;rounded=0;" edge="1" parent="1" source="f_ok_q" target="f_errclass">
           <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="560" y="1580"/><mxPoint x="560" y="1610"/></Array></mxGeometry>
         </mxCell>
         <mxCell id="e23" value="" style="html=1;rounded=0;" edge="1" parent="1" source="f_link" target="f_notify">
