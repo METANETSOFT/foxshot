@@ -1,6 +1,6 @@
 [package]
 name = "foxshot-core"
-version = "0.3.0"
+version = "0.4.0"
 description = "FoxShot Core — platform-agnostic behaviour: capture pipeline, annotation model, upload, library, module registry."
 edition.workspace = true
 license.workspace = true

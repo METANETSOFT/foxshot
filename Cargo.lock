@@ -722,7 +722,7 @@ checksum = "aa9a19cbb55df58761df49b23516a86d432839add4af60fc256da840f66ed35b"
 
 [[package]]
 name = "foxshot-app"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "foxshot-core",
  "foxshot-platform-linux",
@@ -735,7 +735,7 @@ dependencies = [
 
 [[package]]
 name = "foxshot-core"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "hmac",
  "serde",
@@ -745,7 +745,7 @@ dependencies = [
 
 [[package]]
 name = "foxshot-platform-linux"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "foxshot-core",
  "libc",
@@ -757,7 +757,7 @@ dependencies = [
 
 [[package]]
 name = "foxshot-platform-macos"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "core-foundation 0.10.1",
  "core-graphics 0.24.0",
@@ -767,7 +767,7 @@ dependencies = [
 
 [[package]]
 name = "foxshot-platform-windows"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "foxshot-core",
  "ureq",
@@ -775,7 +775,7 @@ dependencies = [
 
 [[package]]
 name = "foxshot-ui"
-version = "0.3.0"
+version = "0.4.0"
 dependencies = [
  "bytemuck",
  "foxshot-core",
