@@ -7,7 +7,7 @@
 //! in, report out.
 
 use crate::error::{Error, Result};
-use crate::module::{Component, ModuleRegistry, Version};
+use crate::module::{Component, ModuleRegistry, ModuleState, Version};
 use serde::Deserialize;
 use std::collections::BTreeMap;
 
@@ -96,6 +96,17 @@ pub enum UpdateStatus {
         /// Core version currently running.
         have: Version,
     },
+    /// The component is **not installed** in this build, but the manifest
+    /// publishes a version of it. That is an addition, not an update: there
+    /// is no installed version to update *from*, so this variant deliberately
+    /// carries none — a `0.0.0` placeholder would dress an addition up as an
+    /// update and mislead the user.
+    NotInstalled {
+        /// Version the manifest publishes.
+        available: Version,
+        /// True when the manifest names a downloadable artifact.
+        installable: bool,
+    },
 }
 
 /// The outcome of comparing a registry against a manifest.
@@ -108,11 +119,18 @@ pub struct UpdateReport {
 }
 
 impl UpdateReport {
-    /// True when anything — Core, an adapter, or a module — has a newer
-    /// published version, whether installable or blocked.
+    /// True when an **installed** component — Core, an adapter, or a module —
+    /// has a newer published version, whether installable or blocked.
+    /// [`UpdateStatus::NotInstalled`] entries are additions, not updates, and
+    /// never count here; see [`UpdateReport::installable_additions`].
     pub fn has_any_update(&self) -> bool {
-        !matches!(self.core, UpdateStatus::UpToDate)
-            || self.per_component.iter().any(|(_, s)| !matches!(s, UpdateStatus::UpToDate))
+        fn is_update(status: &UpdateStatus) -> bool {
+            matches!(
+                status,
+                UpdateStatus::Available { .. } | UpdateStatus::BlockedByCore { .. }
+            )
+        }
+        is_update(&self.core) || self.per_component.iter().any(|(_, s)| is_update(s))
     }
 
     /// True only when Core itself has an update available. A Core update
@@ -120,6 +138,17 @@ impl UpdateReport {
     /// adapter and module updates load without a restart.
     pub fn requires_restart(&self) -> bool {
         matches!(self.core, UpdateStatus::Available { .. })
+    }
+
+    /// The number of manifest components that are not installed in this
+    /// build — the not-installed-but-available count. These are additions the
+    /// build could gain, reported separately from updates so an available
+    /// component is never mistaken for an update from version zero.
+    pub fn installable_additions(&self) -> usize {
+        self.per_component
+            .iter()
+            .filter(|(_, s)| matches!(s, UpdateStatus::NotInstalled { .. }))
+            .count()
     }
 }
 
@@ -130,44 +159,49 @@ pub struct UpdateChecker;
 impl UpdateChecker {
     /// Builds the update report for `registry` against `manifest`.
     ///
-    /// Rules, per component: a published version equal to or older than the
-    /// installed one is [`UpdateStatus::UpToDate`]; a newer one whose
-    /// `min_core` exceeds the running Core is [`UpdateStatus::BlockedByCore`];
-    /// otherwise it is [`UpdateStatus::Available`], `installable` exactly
-    /// when the entry names a download. A component that is not installed at
-    /// all counts as version `0.0.0`, so any published release is newer.
+    /// Rules, per component: when the component is not installed the status
+    /// is [`UpdateStatus::NotInstalled`] — an addition, never an update from
+    /// a made-up `0.0.0`. For installed components, a published version equal
+    /// to or older than the installed one is [`UpdateStatus::UpToDate`]; a
+    /// newer one whose `min_core` exceeds the running Core is
+    /// [`UpdateStatus::BlockedByCore`]; otherwise it is
+    /// [`UpdateStatus::Available`], `installable` exactly when the entry
+    /// names a download.
     pub fn compare(registry: &ModuleRegistry, manifest: &UpdateManifest) -> UpdateReport {
         let have_core = registry.core_version();
-        let core = Self::status_for(Some(have_core), &manifest.core, have_core);
+        let core = Self::status_for(ModuleState::Installed(have_core), &manifest.core, have_core);
 
         let mut per_component = Vec::new();
         for (name, entry) in &manifest.adapters {
             let component = Component::Adapter(name.clone());
             per_component.push((component.clone(), Self::status_for(
-                Self::installed_version(registry, &component), entry, have_core,
+                registry.state(&component), entry, have_core,
             )));
         }
         for (name, entry) in &manifest.modules {
             let component = Component::Module(name.clone());
             per_component.push((component.clone(), Self::status_for(
-                Self::installed_version(registry, &component), entry, have_core,
+                registry.state(&component), entry, have_core,
             )));
         }
 
         UpdateReport { core, per_component }
     }
 
-    /// The installed version of a component, or `None` when absent.
-    fn installed_version(registry: &ModuleRegistry, component: &Component) -> Option<Version> {
-        match registry.state(component) {
-            crate::module::ModuleState::Installed(version) => Some(version),
-            _ => None,
-        }
-    }
-
-    /// The status of one component given its installed version (if any).
-    fn status_for(installed: Option<Version>, entry: &ManifestEntry, have_core: Version) -> UpdateStatus {
-        let from = installed.unwrap_or(Version::new(0, 0, 0));
+    /// The status of one component given its installation state.
+    fn status_for(state: ModuleState, entry: &ManifestEntry, have_core: Version) -> UpdateStatus {
+        let from = match state {
+            ModuleState::Installed(version) => version,
+            // No runnable installed version: there is nothing to update
+            // *from*. Report exactly what the manifest offers instead of
+            // pretending an update from 0.0.0 exists.
+            ModuleState::NotInstalled | ModuleState::Incompatible { .. } => {
+                return UpdateStatus::NotInstalled {
+                    available: entry.version,
+                    installable: entry.download.is_some(),
+                };
+            }
+        };
         if entry.version <= from {
             return UpdateStatus::UpToDate;
         }
@@ -313,18 +347,19 @@ mod tests {
     }
 
     #[test]
-    fn not_installed_component_counts_as_zero() {
+    fn not_installed_component_is_an_addition_not_an_update() {
         let manifest = UpdateManifest::from_json(REAL_MANIFEST).unwrap();
         let registry = ModuleRegistry::new().with_installed(
             Component::Core,
             Version::new(0, 1, 0),
         );
         let report = UpdateChecker::compare(&registry, &manifest);
+        // No phantom 0.0.0: the component is reported as not installed, with
+        // exactly the version the manifest publishes.
         assert_eq!(
             status_of(&report, &Component::Adapter("linux".into())),
-            &UpdateStatus::Available {
-                from: Version::new(0, 0, 0),
-                to: Version::new(0, 1, 0),
+            &UpdateStatus::NotInstalled {
+                available: Version::new(0, 1, 0),
                 installable: false,
             }
         );
@@ -332,5 +367,46 @@ mod tests {
             registry.state(&Component::Adapter("linux".into())),
             ModuleState::NotInstalled
         );
+        // Additions are not updates and never force a restart.
+        assert!(!report.has_any_update());
+        assert!(!report.requires_restart());
+    }
+
+    #[test]
+    fn core_and_linux_only_yields_not_installed_for_everything_else() {
+        let manifest = UpdateManifest::from_json(REAL_MANIFEST).unwrap();
+        let registry = ModuleRegistry::new()
+            .with_installed(Component::Core, Version::new(0, 1, 0))
+            .with_installed(Component::Adapter("linux".into()), Version::new(0, 1, 0));
+        let report = UpdateChecker::compare(&registry, &manifest);
+
+        // The two other adapters and all five modules are additions.
+        for component in [
+            Component::Adapter("macos".into()),
+            Component::Adapter("windows".into()),
+            Component::Module("editor".into()),
+            Component::Module("upload".into()),
+            Component::Module("video".into()),
+            Component::Module("ocr".into()),
+            Component::Module("qr".into()),
+        ] {
+            assert_eq!(
+                status_of(&report, &component),
+                &UpdateStatus::NotInstalled {
+                    available: Version::new(0, 1, 0),
+                    installable: false,
+                },
+                "{component} must be an addition, not an update"
+            );
+        }
+        // What is installed is current.
+        assert_eq!(report.core, UpdateStatus::UpToDate);
+        assert_eq!(
+            status_of(&report, &Component::Adapter("linux".into())),
+            &UpdateStatus::UpToDate
+        );
+        assert!(!report.has_any_update());
+        assert!(!report.requires_restart());
+        assert_eq!(report.installable_additions(), 7);
     }
 }

@@ -20,3 +20,6 @@ png = "0.17"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 foxshot-platform-linux = { path = "../foxshot-platform-linux" }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+foxshot-platform-macos = { path = "../foxshot-platform-macos" }

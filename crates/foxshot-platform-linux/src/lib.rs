@@ -3,9 +3,10 @@
 //! Implements the full [`foxshot_core::platform`] trait set against a real X
 //! server: display enumeration through RandR (with a root-window fallback),
 //! pixel capture through MIT-SHM shared memory when the server offers it and
-//! `GetImage` otherwise. Hotkeys, clipboard, notifications, and HTTP fetch are
-//! not implemented yet and report [`Error::Unsupported`] naming the slice that
-//! adds them — that is honest behaviour, not a placeholder.
+//! `GetImage` otherwise, and HTTP fetch over rustls (ureq). Hotkeys,
+//! clipboard, and notifications are not implemented yet and report
+//! [`Error::Unsupported`] naming the slice that adds them — that is honest
+//! behaviour, not a placeholder.
 
 use foxshot_core::error::{Error, Result};
 use foxshot_core::frame::{Frame, BYTES_PER_PIXEL};
@@ -16,9 +17,15 @@ use foxshot_core::platform::{
     ScreenCapture, ScreenService, WindowChrome,
 };
 use std::path::PathBuf;
+use std::time::Duration;
+use ureq::ResponseExt as _;
 use x11rb::connection::{Connection, RequestConnection};
 use x11rb::protocol::{randr, shm, xproto};
 use x11rb::rust_connection::RustConnection;
+
+/// Largest response body fetch will read — a guard against unbounded
+/// downloads. Update manifests are a few kilobytes; 8 MiB is generous.
+const MAX_BODY_BYTES: u64 = 8 * 1024 * 1024;
 
 /// The Linux/X11 platform adapter. Construct with [`LinuxPlatform::connect`].
 pub struct LinuxPlatform {
@@ -26,6 +33,8 @@ pub struct LinuxPlatform {
     screen_num: usize,
     /// Whether the server offers a usable MIT-SHM extension.
     shm: bool,
+    /// HTTP agent for [`Fetch`]: rustls, 10s global timeout, ≤5 redirects.
+    agent: ureq::Agent,
 }
 
 impl std::fmt::Debug for LinuxPlatform {
@@ -59,7 +68,16 @@ impl LinuxPlatform {
             }
             _ => false,
         };
-        Ok(Self { conn, screen_num, shm })
+        // Status codes are mapped into Core errors by hand, so ureq must not
+        // convert them into its own error kind first.
+        let agent = ureq::Agent::new_with_config(
+            ureq::Agent::config_builder()
+                .timeout_global(Some(Duration::from_secs(10)))
+                .max_redirects(5)
+                .http_status_as_error(false)
+                .build(),
+        );
+        Ok(Self { conn, screen_num, shm, agent })
     }
 
     /// The root window of the screen this connection drives.
@@ -431,13 +449,65 @@ impl NotificationService for LinuxPlatform {
     }
 }
 
+/// Adapter crate version, from the package manifest at build time. The app
+/// registers the adapter under this version in the module registry.
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+
+/// The host part of a URL, for error messages: `https://host/path` → `host`.
+fn host_of(url: &str) -> &str {
+    url.split("://")
+        .nth(1)
+        .and_then(|rest| rest.split(['/', '?', '#']).next())
+        .filter(|host| !host.is_empty())
+        .unwrap_or(url)
+}
+
 impl Fetch for LinuxPlatform {
-    fn get(&self, _url: &str) -> Result<Vec<u8>> {
-        Err(unsupported("HTTP fetch", "S6"))
+    /// HTTPS GET: at most 5 redirects and a 10 second global timeout (agent
+    /// configuration), at most [`MAX_BODY_BYTES`] read here. Transport
+    /// failures and non-2xx statuses both become [`Error::Transport`].
+    fn get(&self, url: &str) -> Result<Vec<u8>> {
+        let mut response = self.agent.get(url).call().map_err(|error| Error::Transport {
+            message: format!("GET to {} failed: {error}", host_of(url)),
+        })?;
+        let status = response.status();
+        if !status.is_success() {
+            return Err(Error::Transport {
+                message: format!("GET to {} returned status {status}", host_of(url)),
+            });
+        }
+        response
+            .body_mut()
+            .with_config()
+            .limit(MAX_BODY_BYTES)
+            .read_to_vec()
+            .map_err(|error| Error::Transport {
+                message: format!(
+                    "reading body from {} failed (limit {} MiB): {error}",
+                    host_of(url),
+                    MAX_BODY_BYTES / (1024 * 1024)
+                ),
+            })
     }
 
-    fn put(&self, _url: &str, _body: &[u8], _content_type: &str) -> Result<String> {
-        Err(unsupported("HTTP fetch", "S6"))
+    /// HTTP PUT with the given content type; on 2xx returns the final URL
+    /// after redirects. Same error mapping as [`Fetch::get`].
+    fn put(&self, url: &str, body: &[u8], content_type: &str) -> Result<String> {
+        let response = self
+            .agent
+            .put(url)
+            .header("Content-Type", content_type)
+            .send(body)
+            .map_err(|error| Error::Transport {
+                message: format!("PUT to {} failed: {error}", host_of(url)),
+            })?;
+        let status = response.status();
+        if !status.is_success() {
+            return Err(Error::Transport {
+                message: format!("PUT to {} returned status {status}", host_of(url)),
+            });
+        }
+        Ok(response.get_uri().to_string())
     }
 }
 

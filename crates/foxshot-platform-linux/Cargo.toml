@@ -14,3 +14,5 @@ workspace = true
 foxshot-core = { path = "../foxshot-core" }
 libc = "0.2"
 x11rb = { version = "0.13", features = ["randr", "shm"] }
+# ureq 3.x is rustls-only (ring + webpki roots): no OpenSSL, no system TLS.
+ureq = { version = "3", default-features = false, features = ["rustls"] }

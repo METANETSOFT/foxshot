@@ -11,3 +11,14 @@ rust-version.workspace = true
 workspace = true
 
 [dependencies]
+# Normal (ungated) dependency: the library body is cfg-gated to macOS, so on
+# every other OS this crate compiles to nothing and foxshot-core sits unused
+# but harmless.
+foxshot-core = { path = "../foxshot-core" }
+
+# Apple frameworks and the HTTP stack exist only where the adapter runs.
+[target.'cfg(target_os = "macos")'.dependencies]
+core-graphics = "0.24"
+core-foundation = "0.10"
+# ureq 3.x is rustls-only (ring + webpki roots): no OpenSSL, no system TLS.
+ureq = { version = "3", default-features = false, features = ["rustls"] }

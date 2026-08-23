@@ -1,10 +1,13 @@
 //! foxshot — the FoxShot command-line application.
 //!
 //! Slice S2 surface: display enumeration and full/display/region capture to
-//! PNG, on Linux/X11. Other operating systems exit non-zero with a message
-//! naming the slice that adds them.
+//! PNG, on Linux/X11; slice S3 adds the macOS adapter. Slice S8 adds
+//! `update --check`: fetch the published update manifest through the
+//! platform's `Fetch` and report what would update. Other operating systems
+//! exit non-zero with a message naming the slice that adds them.
 
-use foxshot_core::{Frame, Platform, Rect};
+use foxshot_core::{Frame, ModuleRegistry, Platform, Rect, UpdateChecker, UpdateManifest,
+    UpdateReport, UpdateStatus};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
@@ -27,6 +30,7 @@ fn run(args: &[String]) -> Result<(), String> {
         }
         Some("displays") => cmd_displays(),
         Some("capture") => cmd_capture(&args[1..]),
+        Some("update") => cmd_update(&args[1..]),
         Some("--help") | Some("-h") => {
             print_usage();
             Ok(())
@@ -47,7 +51,9 @@ fn print_usage() {
          \x20 foxshot capture --display <id> -o <path>\n\
          \x20 foxshot capture --region <x>,<y>,<w>,<h> -o <path>\n\
          \x20 foxshot displays\n\
-         \x20 foxshot --version",
+         \x20 foxshot update --check\n\
+         \x20 foxshot --version\n\
+         \x20 foxshot --help",
         version = env!("CARGO_PKG_VERSION")
     );
 }
@@ -59,11 +65,17 @@ fn connect() -> Result<Box<dyn Platform>, String> {
     Ok(Box::new(platform))
 }
 
+/// Connects the platform adapter of this operating system.
+#[cfg(target_os = "macos")]
+fn connect() -> Result<Box<dyn Platform>, String> {
+    let platform = foxshot_platform_macos::MacosPlatform::connect().map_err(|e| e.to_string())?;
+    Ok(Box::new(platform))
+}
+
 /// Every other OS is not built yet — say exactly when it lands.
-#[cfg(not(target_os = "linux"))]
+#[cfg(not(any(target_os = "linux", target_os = "macos")))]
 fn connect() -> Result<Box<dyn Platform>, String> {
     let slice = match std::env::consts::OS {
-        "macos" => "S3",
         "windows" => "S9",
         _ => "not yet scheduled",
     };
@@ -179,4 +191,92 @@ fn write_png(path: &Path, frame: &Frame) -> Result<(), String> {
     encoder.set_depth(png::BitDepth::Eight);
     let mut writer = encoder.write_header().map_err(|e| format!("png encoder: {e}"))?;
     writer.write_image_data(frame.bytes()).map_err(|e| format!("png encoder: {e}"))
+}
+
+/// Where the FoxShot project publishes its update manifest.
+const MANIFEST_URL: &str =
+    "https://raw.githubusercontent.com/METANETSOFT/foxshot/main/updates.json";
+
+fn cmd_update(args: &[String]) -> Result<(), String> {
+    match args {
+        [flag] if flag == "--check" => cmd_update_check(),
+        [] => Err("update needs --check".to_string()),
+        other => Err(format!("unknown update option '{}'", other.join(" "))),
+    }
+}
+
+/// Fetches the published manifest through the platform's `Fetch` trait,
+/// compares it against what this build contains, and prints the report.
+/// Updates found still exit successfully — only a real failure (no network,
+/// malformed manifest) exits non-zero.
+fn cmd_update_check() -> Result<(), String> {
+    let registry = build_registry();
+    let platform = connect()?;
+    let bytes = platform.fetch().get(MANIFEST_URL).map_err(|e| e.to_string())?;
+    let json =
+        String::from_utf8(bytes).map_err(|e| format!("update manifest is not UTF-8: {e}"))?;
+    let manifest = UpdateManifest::from_json(&json).map_err(|e| e.to_string())?;
+    let report = UpdateChecker::compare(&registry, &manifest);
+    print_report(&report);
+    Ok(())
+}
+
+/// The registry of what this build actually contains: Core at its own
+/// version plus the adapter of this OS at its version. No feature modules
+/// ship in this build, so none are registered.
+fn build_registry() -> ModuleRegistry {
+    build_registry_for_os(ModuleRegistry::new())
+}
+
+/// Registers the Linux adapter at its crate version.
+#[cfg(target_os = "linux")]
+fn build_registry_for_os(registry: ModuleRegistry) -> ModuleRegistry {
+    registry.with_installed(
+        foxshot_core::Component::Adapter("linux".to_string()),
+        foxshot_platform_linux::VERSION.parse().expect("adapter version is valid"),
+    )
+}
+
+/// Registers the macOS adapter at its crate version.
+#[cfg(target_os = "macos")]
+fn build_registry_for_os(registry: ModuleRegistry) -> ModuleRegistry {
+    registry.with_installed(
+        foxshot_core::Component::Adapter("macos".to_string()),
+        foxshot_platform_macos::VERSION.parse().expect("adapter version is valid"),
+    )
+}
+
+/// Other OSes have no adapter crate to register yet.
+#[cfg(not(any(target_os = "linux", target_os = "macos")))]
+fn build_registry_for_os(registry: ModuleRegistry) -> ModuleRegistry {
+    registry
+}
+
+fn print_report(report: &UpdateReport) {
+    println!("core: {}", describe(&report.core));
+    for (component, status) in &report.per_component {
+        println!("{component}: {}", describe(status));
+    }
+    println!(
+        "restart required to apply updates: {}",
+        if report.requires_restart() { "yes" } else { "no" }
+    );
+}
+
+/// One human-readable status phrase for one component.
+fn describe(status: &UpdateStatus) -> String {
+    match status {
+        UpdateStatus::UpToDate => "up to date".to_string(),
+        UpdateStatus::Available { from, to, installable } => {
+            let kind = if *installable { "installable" } else { "not installable" };
+            format!("update {from} -> {to} available ({kind})")
+        }
+        UpdateStatus::BlockedByCore { needs, have } => {
+            format!("update blocked by core (needs core {needs}, have {have})")
+        }
+        UpdateStatus::NotInstalled { available, installable } => {
+            let package = if *installable { "package published" } else { "no package published yet" };
+            format!("not installed ({available} available, {package})")
+        }
+    }
 }
