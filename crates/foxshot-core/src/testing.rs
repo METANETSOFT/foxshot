@@ -11,9 +11,9 @@ use crate::error::{Error, Result};
 use crate::frame::Frame;
 use crate::geometry::{Rect, Scale};
 use crate::platform::{
-    ButtonSide, ChromeStyle, ClipboardService, Display, Fetch, HotkeyService,
-    NotificationService, Paths, Permission, PermissionService, PermissionState, Platform,
-    ScreenCapture, ScreenService, WindowChrome,
+    ButtonSide, ChromeStyle, ClipboardService, Display, Fetch, HotkeyService, NotificationService,
+    Paths, Permission, PermissionService, PermissionState, Platform, ScreenCapture, ScreenService,
+    WindowChrome,
 };
 use std::cell::{Cell, RefCell};
 use std::path::PathBuf;
@@ -121,7 +121,11 @@ impl ScreenService for NullPlatform {
 
 impl ScreenCapture for NullPlatform {
     fn grab(&self, rect: Rect) -> Result<Frame> {
-        Ok(Frame::new_filled(rect.size, Scale::new(1.0), [0x33, 0x66, 0x99, 0xFF]))
+        Ok(Frame::new_filled(
+            rect.size,
+            Scale::new(1.0),
+            [0x33, 0x66, 0x99, 0xFF],
+        ))
     }
 
     fn grab_display(&self, display_id: u32) -> Result<Frame> {
@@ -131,7 +135,11 @@ impl ScreenCapture for NullPlatform {
             .ok_or_else(|| Error::Unsupported {
                 what: format!("display id {display_id}"),
             })?;
-        Ok(Frame::new_filled(display.bounds.size, display.scale, [0x33, 0x66, 0x99, 0xFF]))
+        Ok(Frame::new_filled(
+            display.bounds.size,
+            display.scale,
+            [0x33, 0x66, 0x99, 0xFF],
+        ))
     }
 }
 
@@ -162,7 +170,9 @@ impl HotkeyService for NullPlatform {
     }
 
     fn unregister(&self, id: &str) -> Result<()> {
-        self.registered_hotkeys.borrow_mut().retain(|(k, _)| k != id);
+        self.registered_hotkeys
+            .borrow_mut()
+            .retain(|(k, _)| k != id);
         Ok(())
     }
 
@@ -282,13 +292,25 @@ mod tests {
     fn permissions_flip_from_not_requested_to_granted() {
         let platform = NullPlatform::default();
         let service = platform.permissions();
-        assert_eq!(service.state(Permission::ScreenCapture), PermissionState::NotRequested);
-        assert_eq!(service.state(Permission::Clipboard), PermissionState::NotRequested);
+        assert_eq!(
+            service.state(Permission::ScreenCapture),
+            PermissionState::NotRequested
+        );
+        assert_eq!(
+            service.state(Permission::Clipboard),
+            PermissionState::NotRequested
+        );
         let after = service.request(Permission::ScreenCapture).unwrap();
         assert_eq!(after, PermissionState::Granted);
-        assert_eq!(service.state(Permission::ScreenCapture), PermissionState::Granted);
+        assert_eq!(
+            service.state(Permission::ScreenCapture),
+            PermissionState::Granted
+        );
         // Untouched permissions stay NotRequested.
-        assert_eq!(service.state(Permission::Clipboard), PermissionState::NotRequested);
+        assert_eq!(
+            service.state(Permission::Clipboard),
+            PermissionState::NotRequested
+        );
     }
 
     #[test]
@@ -305,28 +327,55 @@ mod tests {
     #[test]
     fn grab_returns_solid_frame_of_requested_size() {
         let platform = NullPlatform::default();
-        let frame = platform.capture().grab(Rect::from_xywh(10, 10, 40, 30)).unwrap();
-        assert_eq!(frame.size(), Size { width: 40, height: 30 });
-        assert!(frame.bytes().chunks_exact(4).all(|c| c == [0x33, 0x66, 0x99, 0xFF]));
+        let frame = platform
+            .capture()
+            .grab(Rect::from_xywh(10, 10, 40, 30))
+            .unwrap();
+        assert_eq!(
+            frame.size(),
+            Size {
+                width: 40,
+                height: 30
+            }
+        );
+        assert!(
+            frame
+                .bytes()
+                .chunks_exact(4)
+                .all(|c| c == [0x33, 0x66, 0x99, 0xFF])
+        );
     }
 
     #[test]
     fn clipboard_and_notifications_record_calls() {
         let platform = NullPlatform::default();
-        let frame = Frame::new_filled(Size { width: 2, height: 2 }, Scale::new(1.0), [0, 0, 0, 0]);
+        let frame = Frame::new_filled(
+            Size {
+                width: 2,
+                height: 2,
+            },
+            Scale::new(1.0),
+            [0, 0, 0, 0],
+        );
         platform.clipboard().set_image(&frame).unwrap();
         platform.clipboard().set_image(&frame).unwrap();
         platform.clipboard().set_text("hello").unwrap();
         platform.notifications().notify("t", "b").unwrap();
         assert_eq!(platform.clipboard_image_count(), 2);
         assert_eq!(platform.clipboard_texts(), vec!["hello".to_string()]);
-        assert_eq!(platform.notification_log(), vec![("t".to_string(), "b".to_string())]);
+        assert_eq!(
+            platform.notification_log(),
+            vec![("t".to_string(), "b".to_string())]
+        );
     }
 
     #[test]
     fn fetch_get_returns_constructor_bytes_and_put_returns_fixed_url() {
         let platform = NullPlatform::new(b"body".to_vec());
-        assert_eq!(platform.fetch().get("https://example.invalid").unwrap(), b"body");
+        assert_eq!(
+            platform.fetch().get("https://example.invalid").unwrap(),
+            b"body"
+        );
         let put = platform
             .fetch()
             .put("https://example.invalid/up", b"x", "image/png")
@@ -337,7 +386,10 @@ mod tests {
     #[test]
     fn hotkeys_register_and_unregister() {
         let platform = NullPlatform::default();
-        platform.hotkeys().register("capture", "Ctrl+Shift+4").unwrap();
+        platform
+            .hotkeys()
+            .register("capture", "Ctrl+Shift+4")
+            .unwrap();
         assert_eq!(
             platform.registered_hotkeys(),
             vec![("capture".to_string(), "Ctrl+Shift+4".to_string())]

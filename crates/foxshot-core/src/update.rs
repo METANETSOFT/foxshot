@@ -60,8 +60,9 @@ impl UpdateManifest {
     /// not fit the schema, and on a `schema` number this build does not
     /// understand — an unknown schema must be rejected, not guessed at.
     pub fn from_json(json: &str) -> Result<Self> {
-        let manifest: UpdateManifest = serde_json::from_str(json)
-            .map_err(|e| Error::Manifest { message: format!("invalid update manifest: {e}") })?;
+        let manifest: UpdateManifest = serde_json::from_str(json).map_err(|e| Error::Manifest {
+            message: format!("invalid update manifest: {e}"),
+        })?;
         if manifest.schema != MANIFEST_SCHEMA {
             return Err(Error::Manifest {
                 message: format!(
@@ -174,18 +175,23 @@ impl UpdateChecker {
         let mut per_component = Vec::new();
         for (name, entry) in &manifest.adapters {
             let component = Component::Adapter(name.clone());
-            per_component.push((component.clone(), Self::status_for(
-                registry.state(&component), entry, have_core,
-            )));
+            per_component.push((
+                component.clone(),
+                Self::status_for(registry.state(&component), entry, have_core),
+            ));
         }
         for (name, entry) in &manifest.modules {
             let component = Component::Module(name.clone());
-            per_component.push((component.clone(), Self::status_for(
-                registry.state(&component), entry, have_core,
-            )));
+            per_component.push((
+                component.clone(),
+                Self::status_for(registry.state(&component), entry, have_core),
+            ));
         }
 
-        UpdateReport { core, per_component }
+        UpdateReport {
+            core,
+            per_component,
+        }
     }
 
     /// The status of one component given its installation state.
@@ -207,10 +213,17 @@ impl UpdateChecker {
         }
         if let Some(needs) = entry.min_core {
             if needs > have_core {
-                return UpdateStatus::BlockedByCore { needs, have: have_core };
+                return UpdateStatus::BlockedByCore {
+                    needs,
+                    have: have_core,
+                };
             }
         }
-        UpdateStatus::Available { from, to: entry.version, installable: entry.download.is_some() }
+        UpdateStatus::Available {
+            from,
+            to: entry.version,
+            installable: entry.download.is_some(),
+        }
     }
 }
 
@@ -221,15 +234,15 @@ mod tests {
 
     /// The real manifest, fetched from the repository once and committed as
     /// a fixture so the test runs offline and against stable bytes.
-    const REAL_MANIFEST: &str =
-        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/updates.json"));
+    const REAL_MANIFEST: &str = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/fixtures/updates.json"
+    ));
 
     /// A registry with Core, all three adapters and all five modules at 0.1.0.
     fn registry_all_0_1_0() -> ModuleRegistry {
-        let mut registry = ModuleRegistry::new().with_installed(
-            Component::Core,
-            Version::new(0, 1, 0),
-        );
+        let mut registry =
+            ModuleRegistry::new().with_installed(Component::Core, Version::new(0, 1, 0));
         for adapter in ["linux", "macos", "windows"] {
             registry.bump(&Component::Adapter(adapter.into()), Version::new(0, 1, 0));
         }
@@ -256,14 +269,20 @@ mod tests {
         assert_eq!(manifest.adapters.len(), 3);
         assert_eq!(manifest.modules.len(), 5);
         for name in ["linux", "macos", "windows"] {
-            assert!(manifest.adapters.contains_key(name), "adapter {name} missing");
+            assert!(
+                manifest.adapters.contains_key(name),
+                "adapter {name} missing"
+            );
         }
         for name in ["editor", "upload", "video", "ocr", "qr"] {
             assert!(manifest.modules.contains_key(name), "module {name} missing");
         }
         // `download: null` parses to None and min_core round-trips.
         assert_eq!(manifest.core.download, None);
-        assert_eq!(manifest.adapters["linux"].min_core, Some(Version::new(0, 1, 0)));
+        assert_eq!(
+            manifest.adapters["linux"].min_core,
+            Some(Version::new(0, 1, 0))
+        );
     }
 
     #[test]
@@ -349,10 +368,7 @@ mod tests {
     #[test]
     fn not_installed_component_is_an_addition_not_an_update() {
         let manifest = UpdateManifest::from_json(REAL_MANIFEST).unwrap();
-        let registry = ModuleRegistry::new().with_installed(
-            Component::Core,
-            Version::new(0, 1, 0),
-        );
+        let registry = ModuleRegistry::new().with_installed(Component::Core, Version::new(0, 1, 0));
         let report = UpdateChecker::compare(&registry, &manifest);
         // No phantom 0.0.0: the component is reported as not installed, with
         // exactly the version the manifest publishes.

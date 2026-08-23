@@ -21,12 +21,12 @@ pub use error::{Error, Result};
 pub use frame::Frame;
 pub use geometry::{Point, Rect, Scale, Size};
 pub use module::{Component, ModuleInfo, ModuleRegistry, ModuleState, Version};
-pub use selection::{Handle, SelectionPhase, SelectionState};
 pub use platform::{
-    ButtonSide, ChromeStyle, ClipboardService, Display, Fetch, HotkeyService,
-    NotificationService, Paths, Permission, PermissionService, PermissionState, Platform,
-    ScreenCapture, ScreenService, WindowChrome,
+    ButtonSide, ChromeStyle, ClipboardService, Display, Fetch, HotkeyService, NotificationService,
+    Paths, Permission, PermissionService, PermissionState, Platform, ScreenCapture, ScreenService,
+    WindowChrome,
 };
+pub use selection::{Handle, SelectionPhase, SelectionState};
 pub use testing::NullPlatform;
 pub use update::{ManifestEntry, UpdateChecker, UpdateManifest, UpdateReport, UpdateStatus};
 pub use upload::{

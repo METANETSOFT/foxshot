@@ -143,9 +143,7 @@ pub fn canonical_request(
     payload_hash: &str,
 ) -> String {
     let (canonical_headers, signed_headers) = canonicalize_headers(headers);
-    format!(
-        "{method}\n{path}\n{query}\n{canonical_headers}\n{signed_headers}\n{payload_hash}"
-    )
+    format!("{method}\n{path}\n{query}\n{canonical_headers}\n{signed_headers}\n{payload_hash}")
 }
 
 /// The credential scope: `date/region/service/aws4_request`.
@@ -210,7 +208,12 @@ fn uri_encode_path(path: &str) -> String {
 
 /// Content type guessed from the key's extension; uploads here are images.
 fn content_type_for(key: &str) -> &'static str {
-    match key.rsplit('.').next().map(str::to_ascii_lowercase).as_deref() {
+    match key
+        .rsplit('.')
+        .next()
+        .map(str::to_ascii_lowercase)
+        .as_deref()
+    {
         Some("png") => "image/png",
         Some("jpg" | "jpeg") => "image/jpeg",
         Some("gif") => "image/gif",
@@ -306,7 +309,11 @@ impl S3Target {
     /// exactly one slash between prefix and name.
     pub fn object_key(&self, name: &str) -> String {
         let name = name.trim_start_matches('/');
-        match self.prefix.as_deref().map(|prefix| prefix.trim_matches('/')) {
+        match self
+            .prefix
+            .as_deref()
+            .map(|prefix| prefix.trim_matches('/'))
+        {
             Some(prefix) if !prefix.is_empty() => format!("{prefix}/{name}"),
             _ => name.to_string(),
         }
@@ -324,7 +331,11 @@ impl S3Target {
 
     /// The URL the PUT goes to.
     fn request_url(&self, key: &str) -> String {
-        format!("{}{}", self.endpoint.trim_end_matches('/'), self.request_path(key))
+        format!(
+            "{}{}",
+            self.endpoint.trim_end_matches('/'),
+            self.request_path(key)
+        )
     }
 
     /// The URL handed back to the caller: `public_base` joined with the key
@@ -390,7 +401,8 @@ impl UploadTarget for S3Target {
             ("x-amz-date".to_string(), amz_date.clone()),
         ];
         let scope = credential_scope(&date, &self.region, SERVICE);
-        let canonical = canonical_request("PUT", &self.request_path(&key), "", &headers, &payload_hash);
+        let canonical =
+            canonical_request("PUT", &self.request_path(&key), "", &headers, &payload_hash);
         let to_sign = string_to_sign(&amz_date, &scope, &canonical);
         let signing = signing_key(&self.creds.secret_access_key, &date, &self.region, SERVICE);
         let signed = signature(&signing, &to_sign);
@@ -421,7 +433,9 @@ pub struct FreeHostTarget {
 impl FreeHostTarget {
     /// A free-host target rooted at `endpoint` (no trailing slash needed).
     pub fn new(endpoint: impl Into<String>) -> FreeHostTarget {
-        FreeHostTarget { endpoint: endpoint.into() }
+        FreeHostTarget {
+            endpoint: endpoint.into(),
+        }
     }
 }
 
@@ -508,12 +522,19 @@ impl fmt::Debug for UploadQueue {
 impl UploadQueue {
     /// An empty queue uploading to `target`.
     pub fn new(target: Box<dyn UploadTarget>) -> UploadQueue {
-        UploadQueue { target, pending: Vec::new() }
+        UploadQueue {
+            target,
+            pending: Vec::new(),
+        }
     }
 
     /// Adds `bytes` to the queue under `key`.
     pub fn push(&mut self, key: impl Into<String>, bytes: Vec<u8>) {
-        self.pending.push(PendingUpload { key: key.into(), bytes, error: None });
+        self.pending.push(PendingUpload {
+            key: key.into(),
+            bytes,
+            error: None,
+        });
     }
 
     /// The items still waiting — including failed ones, with their errors.
@@ -602,15 +623,27 @@ mod tests {
 
     fn aws_example_headers() -> Vec<(String, String)> {
         vec![
-            ("Host".to_string(), "examplebucket.s3.amazonaws.com".to_string()),
+            (
+                "Host".to_string(),
+                "examplebucket.s3.amazonaws.com".to_string(),
+            ),
             ("Range".to_string(), "bytes=0-9".to_string()),
-            ("x-amz-content-sha256".to_string(), EMPTY_PAYLOAD_HASH.to_string()),
+            (
+                "x-amz-content-sha256".to_string(),
+                EMPTY_PAYLOAD_HASH.to_string(),
+            ),
             ("x-amz-date".to_string(), AWS_AMZ_DATE.to_string()),
         ]
     }
 
     fn aws_example_canonical_request() -> String {
-        canonical_request("GET", "/test.txt", "", &aws_example_headers(), EMPTY_PAYLOAD_HASH)
+        canonical_request(
+            "GET",
+            "/test.txt",
+            "",
+            &aws_example_headers(),
+            EMPTY_PAYLOAD_HASH,
+        )
     }
 
     fn aws_example_string_to_sign() -> String {
@@ -675,12 +708,18 @@ mod tests {
     fn credentials_debug_redacts_the_secret() {
         let creds = Credentials::new("AKIDEXAMPLE", "super-secret-value");
         let shown = format!("{creds:?}");
-        assert!(shown.contains("[redacted]"), "secret must print redacted: {shown}");
+        assert!(
+            shown.contains("[redacted]"),
+            "secret must print redacted: {shown}"
+        );
         assert!(
             !shown.contains("super-secret-value"),
             "secret value must never appear in Debug output: {shown}"
         );
-        assert!(shown.contains("AKIDEXAMPLE"), "access key id is safe to show: {shown}");
+        assert!(
+            shown.contains("AKIDEXAMPLE"),
+            "access key id is safe to show: {shown}"
+        );
     }
 
     #[test]
@@ -691,7 +730,10 @@ mod tests {
             Credentials::new("AKIDEXAMPLE", "super-secret-value"),
         );
         let shown = format!("{target:?}");
-        assert!(!shown.contains("super-secret-value"), "target Debug leaks the secret: {shown}");
+        assert!(
+            !shown.contains("super-secret-value"),
+            "target Debug leaks the secret: {shown}"
+        );
     }
 
     // === S3Target construction and keys ====================================
@@ -707,7 +749,10 @@ mod tests {
     #[test]
     fn aws_endpoint_is_virtual_hosted_style() {
         let target = S3Target::aws("eu-central-1", "shots", Credentials::new("id", "secret"));
-        assert_eq!(target.endpoint, "https://shots.s3.eu-central-1.amazonaws.com");
+        assert_eq!(
+            target.endpoint,
+            "https://shots.s3.eu-central-1.amazonaws.com"
+        );
         assert_eq!(target.region, "eu-central-1");
         assert_eq!(target.name(), "s3");
     }
@@ -715,9 +760,18 @@ mod tests {
     #[test]
     fn key_with_prefix_joins_without_double_slash() {
         let target = S3Target::r2("abc123", "shots", Credentials::new("id", "secret"));
-        assert_eq!(target.clone().with_prefix("shots/").object_key("a.png"), "shots/a.png");
-        assert_eq!(target.clone().with_prefix("shots").object_key("a.png"), "shots/a.png");
-        assert_eq!(target.clone().with_prefix("/shots/").object_key("/a.png"), "shots/a.png");
+        assert_eq!(
+            target.clone().with_prefix("shots/").object_key("a.png"),
+            "shots/a.png"
+        );
+        assert_eq!(
+            target.clone().with_prefix("shots").object_key("a.png"),
+            "shots/a.png"
+        );
+        assert_eq!(
+            target.clone().with_prefix("/shots/").object_key("/a.png"),
+            "shots/a.png"
+        );
         assert_eq!(target.object_key("a.png"), "a.png");
     }
 
@@ -730,7 +784,9 @@ mod tests {
 
     impl RecordingFetch {
         fn new() -> RecordingFetch {
-            RecordingFetch { puts: RefCell::new(Vec::new()) }
+            RecordingFetch {
+                puts: RefCell::new(Vec::new()),
+            }
         }
     }
 
@@ -765,11 +821,15 @@ mod tests {
 
     impl Fetch for FailingFetch {
         fn get(&self, _url: &str) -> Result<Vec<u8>> {
-            Err(Error::Transport { message: "connection refused".to_string() })
+            Err(Error::Transport {
+                message: "connection refused".to_string(),
+            })
         }
 
         fn put(&self, _url: &str, _body: &[u8], _content_type: &str) -> Result<String> {
-            Err(Error::Transport { message: "connection refused".to_string() })
+            Err(Error::Transport {
+                message: "connection refused".to_string(),
+            })
         }
     }
 
@@ -781,17 +841,28 @@ mod tests {
     #[test]
     fn s3_upload_signs_and_returns_endpoint_url() {
         let fetch = RecordingFetch::new();
-        let url = example_target().upload(&fetch, b"png-bytes", "a.png").unwrap();
-        assert_eq!(url, "https://abc123.r2.cloudflarestorage.com/shots/captures/a.png");
+        let url = example_target()
+            .upload(&fetch, b"png-bytes", "a.png")
+            .unwrap();
+        assert_eq!(
+            url,
+            "https://abc123.r2.cloudflarestorage.com/shots/captures/a.png"
+        );
         let puts = fetch.puts.borrow();
         assert_eq!(puts.len(), 1);
         assert_eq!(puts[0].0, url);
         assert!(
-            puts[0].1.starts_with("AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/"),
+            puts[0]
+                .1
+                .starts_with("AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/"),
             "signed authorization header expected, got: {}",
             puts[0].1
         );
-        assert!(puts[0].1.contains("SignedHeaders=host;x-amz-content-sha256;x-amz-date"));
+        assert!(
+            puts[0]
+                .1
+                .contains("SignedHeaders=host;x-amz-content-sha256;x-amz-date")
+        );
     }
 
     #[test]
@@ -806,13 +877,19 @@ mod tests {
     fn validate_rejects_empty_configuration() {
         let fetch = RecordingFetch::new();
         let target = S3Target::r2("abc123", "", Credentials::new("AKIDEXAMPLE", "secret"));
-        assert!(matches!(target.validate(&fetch), Err(Error::Manifest { .. })));
+        assert!(matches!(
+            target.validate(&fetch),
+            Err(Error::Manifest { .. })
+        ));
     }
 
     #[test]
     fn validate_fails_when_endpoint_is_unreachable() {
         let target = example_target();
-        assert!(matches!(target.validate(&FailingFetch), Err(Error::Transport { .. })));
+        assert!(matches!(
+            target.validate(&FailingFetch),
+            Err(Error::Transport { .. })
+        ));
     }
 
     // === FreeHostTarget =====================================================
@@ -837,11 +914,19 @@ mod tests {
             }
         }
         let target = FreeHostTarget::new("https://free.example");
-        let error = target.upload(&SilentFetch, b"png-bytes", "x.png").unwrap_err();
+        let error = target
+            .upload(&SilentFetch, b"png-bytes", "x.png")
+            .unwrap_err();
         match error {
             Error::Transport { message } => {
-                assert!(message.contains("did not report a URL"), "unexpected: {message}");
-                assert!(message.contains("free.example"), "error must name the host: {message}");
+                assert!(
+                    message.contains("did not report a URL"),
+                    "unexpected: {message}"
+                );
+                assert!(
+                    message.contains("free.example"),
+                    "error must name the host: {message}"
+                );
             }
             other => panic!("expected Transport, got {other:?}"),
         }
@@ -852,8 +937,7 @@ mod tests {
     #[test]
     fn drain_uploads_everything_and_empties_the_queue() {
         let fetch = RecordingFetch::new();
-        let mut queue =
-            UploadQueue::new(Box::new(FreeHostTarget::new("https://free.example")));
+        let mut queue = UploadQueue::new(Box::new(FreeHostTarget::new("https://free.example")));
         queue.push("a.png", b"a".to_vec());
         queue.push("b.png", b"b".to_vec());
         let report = queue.drain(&fetch);
@@ -863,8 +947,7 @@ mod tests {
 
     #[test]
     fn failed_items_stay_queued_with_their_error_and_retry() {
-        let mut queue =
-            UploadQueue::new(Box::new(FreeHostTarget::new("https://free.example")));
+        let mut queue = UploadQueue::new(Box::new(FreeHostTarget::new("https://free.example")));
         queue.push("a.png", b"a".to_vec());
 
         let report = queue.drain(&FailingFetch);
@@ -894,7 +977,10 @@ mod tests {
 
     #[test]
     fn uri_encode_path_keeps_unreserved_and_slashes() {
-        assert_eq!(uri_encode_path("shots/a-b_c.d~e.png"), "shots/a-b_c.d~e.png");
+        assert_eq!(
+            uri_encode_path("shots/a-b_c.d~e.png"),
+            "shots/a-b_c.d~e.png"
+        );
         assert_eq!(uri_encode_path("a b.png"), "a%20b.png");
     }
 }

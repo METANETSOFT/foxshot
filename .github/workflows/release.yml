@@ -1,0 +1,223 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to build and release (e.g. v0.4.0)"
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  linux:
+    name: Linux (tar.gz, deb, rpm, AppImage)
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ github.event.inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install build dependencies for the X11 adapter
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libxcb1-dev libxcb-randr0-dev \
+            libxcb-shm0-dev libxcb-xfixes0-dev libxcb-shape0-dev
+      - name: Install packaging tools
+        run: |
+          cargo install --locked cargo-deb
+          cargo install --locked cargo-generate-rpm
+      - name: Build release binary
+        run: cargo build --release -p foxshot-app
+      - name: Strip binary
+        run: strip target/release/foxshot
+      - name: Compute version
+        run: echo "VERSION=${VERSION#v}" >> "$GITHUB_ENV"
+      - name: Build tar.gz
+        run: |
+          mkdir -p dist
+          tar -C target/release -czf "dist/foxshot-${VERSION}-linux-x86_64.tar.gz" foxshot
+      - name: Build deb
+        run: |
+          cargo deb -p foxshot-app --no-build --no-strip
+          cp target/debian/foxshot_*_amd64.deb "dist/foxshot-${VERSION}-linux-x86_64.deb"
+      - name: Build rpm
+        run: |
+          cargo generate-rpm -p crates/foxshot-app
+          cp target/generate-rpm/foxshot-*.x86_64.rpm "dist/foxshot-${VERSION}-linux-x86_64.rpm"
+      - name: Build AppImage
+        run: |
+          set -euo pipefail
+          curl -sSL -o linuxdeploy \
+            https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          chmod +x linuxdeploy
+          mkdir -p AppDir/usr/bin AppDir/usr/share/applications \
+            AppDir/usr/share/icons/hicolor/256x256/apps
+          cp target/release/foxshot AppDir/usr/bin/foxshot
+          cat > AppDir/usr/share/applications/foxshot.desktop <<'DESKTOP'
+          [Desktop Entry]
+          Name=FoxShot
+          Comment=Screenshot capture, annotation and sharing
+          Exec=foxshot
+          Icon=foxshot
+          Type=Application
+          Categories=Utility;
+          DESKTOP
+          echo 'iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAEBUlEQVR42u3dsQ1AABRFUWOoDGBWM5lJodKwA5GIe4q7wJd3omIYp/mU1GxwBAkAkgAgCQCSACAJAJIAIAkAkgAgCQCSACAJAJIAIAkAkgAgCQCSACAJAJIAIAkAkgAgCQCSACAJAJIAIAkAkgAgCQCSACAJAJIAIAkAkgAgCQCSACAJAJIAIAkAkgAgCQCSACAJAJIAHAESQASAKAJABIAoAkAEgCgCQASAKAJABIAoAkAEgCgCQASAKAJABIAoAkAEgCgCQASAKAJABIAoAkAEgCgCQASAKAJABIAoAkAEgCgAQAR5AAIAkAkgAgCQCSACAJAJIAIAkAkgAgCQCSACAJAJIA8IG2/ZBuBwAACAAAAIAAAAAACAAAAIAAAAAACAAAAIAAAAAACAAAAIAAAAAACAAAAIAAAAAACAAAAIAAAAAACAAAAIAAAAAACAAAAIAAAAAACAAAAIAAAAAACAAAAIAAAAAACAAAAIAAAAAACAAAAIAAAAAACAAAAMBbLevpDgAAwJ8H/jQAAAAAsdHDAAAAMPo8BgAAgOGHIQAAAAw/DAEAAGD8YQQAAADDD0MAAAAYfxgBAADA+MMIAAAAxh9GAAAAMP4wAgAAgPGHEQAAAIw/jAAAAGD8YQQAAADjDyMAAAAAAAAAAIDxFxEAAACMP4wAAAAAAAAAAADGX0QAAAAAAAAAAADjLyIAAAAAAAAAAAAAAAAAABh/CgEAAAAAAAAAAAAAAAAAwPhTCAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYPz/QQAAAICANwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACDgi0AAAAAAAAAAAAAAAAT8FwAAAAAAAAAAAMMHAAD8Hdj4AQAAAAAAAACIAVBH4OvPBgAAAAAAAAAACNTGDwAAQCA8fgAAAAAAAAAAIFAcPwAAAIHw+AEAAAiExw8AAEAgPH4AAAAC4fEDAAAQCI8fAACAQHj8AAAABMLjBwAAQBAdPgAAAIH4+AEAABBEhw8AAIAgPHwAAAAG0dEDAAAwCI8eAABIAeEOAACABAAASAAAgAQAAAgAAACAAAAAAAgAAACAAAAAAAgAAACAAAAAAAgAAACAAAAAAAgAAACAAAAAAAgAAACAAAAAAAgAAACAAAAAAAgAAACAAAAAAAgAAACAAAAASQCQBABJAJAEAEkAkAQASQCQBABJAJAEAEkAkAQASQCQBABJAJAEAAkAjiABQBIAJAFAEgAkAUASACQBQBIAJAFAEgAkAUASACQBQBIAJAFAEgAkAUASACQBQBIAJAFAEgAkAUASACQBQBIAJAFAEgAkAUASACQBQBIAJAFAEgAkAUASACQAOIIEAEm5LuVH6DY/TbTNAAAAAElFTkSuQmCC' \
+            | base64 -d > AppDir/usr/share/icons/hicolor/256x256/apps/foxshot.png
+          export APPIMAGE_EXTRACT_AND_RUN=1
+          ./linuxdeploy --appdir AppDir --output appimage
+          mv ./*.AppImage "dist/foxshot-${VERSION}-linux-x86_64.AppImage"
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          files: dist/*
+          fail_on_unmatched_files: true
+
+  macos:
+    name: macOS (${{ matrix.arch }})
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            arch: arm64
+          - target: x86_64-apple-darwin
+            arch: x86_64
+    env:
+      VERSION: ${{ github.event.inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+      - name: Build release binary
+        # First real compile of the macOS adapter — this step must not be
+        # skipped and has no continue-on-error on purpose.
+        run: cargo build --release -p foxshot-app --target ${{ matrix.target }}
+      - name: Compute version
+        run: echo "VERSION=${VERSION#v}" >> "$GITHUB_ENV"
+      - name: Assemble FoxShot.app
+        run: |
+          set -euo pipefail
+          APP=FoxShot.app
+          mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+          cp "target/${{ matrix.target }}/release/foxshot" "$APP/Contents/MacOS/foxshot"
+          cat > "$APP/Contents/Info.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>CFBundleIdentifier</key>
+              <string>com.metanetsoft.foxshot</string>
+              <key>CFBundleName</key>
+              <string>FoxShot</string>
+              <key>CFBundleDisplayName</key>
+              <string>FoxShot</string>
+              <key>CFBundleExecutable</key>
+              <string>foxshot</string>
+              <key>CFBundlePackageType</key>
+              <string>APPL</string>
+              <key>CFBundleShortVersionString</key>
+              <string>${VERSION}</string>
+              <key>CFBundleVersion</key>
+              <string>${VERSION}</string>
+              <key>LSMinimumSystemVersion</key>
+              <string>13.0</string>
+              <key>NSHighResolutionCapable</key>
+              <true/>
+              <key>NSScreenCaptureUsageDescription</key>
+              <string>FoxShot records your screen only when you take a screenshot.</string>
+              <key>NSAppleEventsUsageDescription</key>
+              <string>FoxShot uses Apple events to drive its capture and editor windows.</string>
+          </dict>
+          </plist>
+          PLIST
+          plutil -lint "$APP/Contents/Info.plist"
+      - name: Ad-hoc codesign
+        run: codesign --force --deep --sign - FoxShot.app
+      - name: Create dmg
+        run: |
+          mkdir -p dist
+          hdiutil create -volname FoxShot -srcfolder FoxShot.app -ov -format UDZO \
+            "dist/foxshot-${VERSION}-mac-${{ matrix.arch }}.dmg"
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          files: dist/*.dmg
+          fail_on_unmatched_files: true
+          body: |
+            **The macOS builds are ad-hoc signed and not notarized.** After dragging
+            `FoxShot.app` into `/Applications`, clear the quarantine attribute once:
+
+            ```sh
+            xattr -cr /Applications/FoxShot.app
+            ```
+
+            The app then opens normally.
+
+  windows:
+    name: Windows (zip, msi)
+    runs-on: windows-latest
+    env:
+      VERSION: ${{ github.event.inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Build release binary
+        run: cargo build --release -p foxshot-app
+      - name: Install cargo-wix
+        run: cargo install --locked cargo-wix
+      - name: Ensure WiX Toolset v3
+        shell: pwsh
+        run: |
+          if (-not (Get-Command candle.exe -ErrorAction SilentlyContinue)) {
+            choco install -y wixtoolset --no-progress
+            $wixBin = "C:\Program Files (x86)\WiX Toolset v3.14\bin"
+            if (Test-Path $wixBin) { echo $wixBin >> $env:GITHUB_PATH }
+          }
+      - name: Build zip
+        shell: pwsh
+        run: |
+          $version = $env:VERSION.TrimStart('v')
+          New-Item -ItemType Directory -Force dist | Out-Null
+          Compress-Archive -Path target/release/foxshot.exe `
+            -DestinationPath "dist/foxshot-$version-win-x86_64.zip"
+      - name: Build msi
+        shell: pwsh
+        run: |
+          $version = $env:VERSION.TrimStart('v')
+          Push-Location crates/foxshot-app
+          try {
+            cargo wix --no-build `
+              --output "$env:GITHUB_WORKSPACE/dist/foxshot-$version-win-x86_64.msi"
+          } finally {
+            Pop-Location
+          }
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          files: dist/*
+          fail_on_unmatched_files: true

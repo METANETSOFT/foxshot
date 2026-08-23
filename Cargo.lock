@@ -727,6 +727,7 @@ dependencies = [
  "foxshot-core",
  "foxshot-platform-linux",
  "foxshot-platform-macos",
+ "foxshot-platform-windows",
  "foxshot-ui",
  "libc",
  "png",
@@ -767,6 +768,10 @@ dependencies = [
 [[package]]
 name = "foxshot-platform-windows"
 version = "0.3.0"
+dependencies = [
+ "foxshot-core",
+ "ureq",
+]
 
 [[package]]
 name = "foxshot-ui"

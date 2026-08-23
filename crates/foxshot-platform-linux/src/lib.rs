@@ -9,12 +9,12 @@
 //! root window.
 
 use foxshot_core::error::{Error, Result};
-use foxshot_core::frame::{Frame, BYTES_PER_PIXEL};
+use foxshot_core::frame::{BYTES_PER_PIXEL, Frame};
 use foxshot_core::geometry::{Rect, Scale, Size};
 use foxshot_core::platform::{
-    ButtonSide, ChromeStyle, ClipboardService, Display, Fetch, HotkeyService,
-    NotificationService, Paths, Permission, PermissionService, PermissionState, Platform,
-    ScreenCapture, ScreenService, WindowChrome,
+    ButtonSide, ChromeStyle, ClipboardService, Display, Fetch, HotkeyService, NotificationService,
+    Paths, Permission, PermissionService, PermissionState, Platform, ScreenCapture, ScreenService,
+    WindowChrome,
 };
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -56,7 +56,9 @@ impl std::fmt::Debug for LinuxPlatform {
 
 /// Maps any displayable transport failure into Core's error vocabulary.
 fn transport(error: impl std::fmt::Display) -> Error {
-    Error::Transport { message: error.to_string() }
+    Error::Transport {
+        message: error.to_string(),
+    }
 }
 
 impl LinuxPlatform {
@@ -66,9 +68,9 @@ impl LinuxPlatform {
             message: format!("cannot connect to X server: {error}"),
         })?;
         let shm = match conn.extension_information(shm::X11_EXTENSION_NAME) {
-            Ok(Some(_)) => {
-                shm::query_version(&conn).map(|cookie| cookie.reply().is_ok()).unwrap_or(false)
-            }
+            Ok(Some(_)) => shm::query_version(&conn)
+                .map(|cookie| cookie.reply().is_ok())
+                .unwrap_or(false),
             _ => false,
         };
         // Status codes are mapped into Core errors by hand, so ureq must not
@@ -80,7 +82,13 @@ impl LinuxPlatform {
                 .http_status_as_error(false)
                 .build(),
         );
-        Ok(Self { conn, screen_num, shm, agent, hotkey_grabs: Mutex::new(HashMap::new()) })
+        Ok(Self {
+            conn,
+            screen_num,
+            shm,
+            agent,
+            hotkey_grabs: Mutex::new(HashMap::new()),
+        })
     }
 
     /// Waits up to `timeout` for a registered hotkey to fire and returns its
@@ -90,7 +98,9 @@ impl LinuxPlatform {
         let registrations = self
             .hotkey_grabs
             .lock()
-            .map_err(|_| Error::Transport { message: "hotkey registry poisoned".to_string() })?
+            .map_err(|_| Error::Transport {
+                message: "hotkey registry poisoned".to_string(),
+            })?
             .clone();
         hotkeys::poll(&self.conn, &registrations, timeout)
     }
@@ -103,7 +113,12 @@ impl LinuxPlatform {
     /// The root window bounds in pixels: the whole desktop on X11.
     fn root_bounds(&self) -> Rect {
         let screen = &self.conn.setup().roots[self.screen_num];
-        Rect::from_xywh(0, 0, screen.width_in_pixels as u32, screen.height_in_pixels as u32)
+        Rect::from_xywh(
+            0,
+            0,
+            screen.width_in_pixels as u32,
+            screen.height_in_pixels as u32,
+        )
     }
 
     /// Fallback display used when RandR is absent or reports nothing: the X
@@ -129,7 +144,9 @@ impl LinuxPlatform {
             .map_err(transport)?
             .is_none()
         {
-            return Err(Error::Unsupported { what: "RANDR extension".to_string() });
+            return Err(Error::Unsupported {
+                what: "RANDR extension".to_string(),
+            });
         }
         // CRTC-based enumeration requires at least RandR 1.2.
         randr::query_version(&self.conn, 1, 2)
@@ -204,7 +221,9 @@ impl LinuxPlatform {
             .iter()
             .find(|format| format.depth == depth)
             .copied()
-            .ok_or_else(|| Error::Unsupported { what: format!("depth {depth}") })
+            .ok_or_else(|| Error::Unsupported {
+                what: format!("depth {depth}"),
+            })
     }
 
     /// RGB channel masks of a visual, looked up in the connection setup.
@@ -220,7 +239,9 @@ impl LinuxPlatform {
                 }
             }
         }
-        Err(Error::Unsupported { what: format!("visual {visual:#x}") })
+        Err(Error::Unsupported {
+            what: format!("visual {visual:#x}"),
+        })
     }
 
     /// Bytes per scanline of a ZPixmap image of `width` pixels in `format`.
@@ -243,12 +264,16 @@ impl LinuxPlatform {
         // and removes the segment exactly once.
         let shmid = unsafe { libc::shmget(libc::IPC_PRIVATE, size, libc::IPC_CREAT | 0o600) };
         if shmid < 0 {
-            return Err(Error::Transport { message: "shmget failed".to_string() });
+            return Err(Error::Transport {
+                message: "shmget failed".to_string(),
+            });
         }
         let addr = unsafe { libc::shmat(shmid, std::ptr::null(), 0) };
         if addr.is_null() || addr as isize == -1 {
             unsafe { libc::shmctl(shmid, libc::IPC_RMID, std::ptr::null_mut()) };
-            return Err(Error::Transport { message: "shmat failed".to_string() });
+            return Err(Error::Transport {
+                message: "shmat failed".to_string(),
+            });
         }
 
         let captured = (|| {
@@ -313,7 +338,10 @@ impl LinuxPlatform {
         let stride = Self::stride_bytes(size.width, &format);
         let expected = stride * size.height as usize;
         if data.len() < expected {
-            return Err(Error::InvalidPixelBuffer { expected, got: data.len() });
+            return Err(Error::InvalidPixelBuffer {
+                expected,
+                got: data.len(),
+            });
         }
         let lsb_first = matches!(
             self.conn.setup().image_byte_order,
@@ -388,7 +416,10 @@ impl ScreenService for LinuxPlatform {
     }
 
     fn primary(&self) -> Result<Display> {
-        self.displays()?.into_iter().find(|d| d.is_primary).ok_or(Error::NoDisplays)
+        self.displays()?
+            .into_iter()
+            .find(|d| d.is_primary)
+            .ok_or(Error::NoDisplays)
     }
 }
 
@@ -398,9 +429,10 @@ impl ScreenCapture for LinuxPlatform {
     /// display). A rect entirely outside the desktop is `RectOutOfBounds`.
     fn grab(&self, rect: Rect) -> Result<Frame> {
         let bounds = self.root_bounds();
-        let clipped = rect
-            .intersection(&bounds)
-            .ok_or(Error::RectOutOfBounds { requested: rect, bounds })?;
+        let clipped = rect.intersection(&bounds).ok_or(Error::RectOutOfBounds {
+            requested: rect,
+            bounds,
+        })?;
         if self.shm {
             if let Ok(frame) = self.grab_shm(clipped) {
                 return Ok(frame);
@@ -415,7 +447,9 @@ impl ScreenCapture for LinuxPlatform {
         let display = displays
             .iter()
             .find(|d| d.id == display_id)
-            .ok_or_else(|| Error::Unsupported { what: format!("unknown display id {display_id}") })?;
+            .ok_or_else(|| Error::Unsupported {
+                what: format!("unknown display id {display_id}"),
+            })?;
         self.grab(display.bounds)
     }
 }
@@ -440,10 +474,9 @@ impl HotkeyService for LinuxPlatform {
     /// accelerator.
     fn register(&self, id: &str, accelerator: &str) -> Result<()> {
         let grab = hotkeys::register(&self.conn, self.screen_num, id, accelerator)?;
-        let mut grabs = self
-            .hotkey_grabs
-            .lock()
-            .map_err(|_| Error::Transport { message: "hotkey registry poisoned".to_string() })?;
+        let mut grabs = self.hotkey_grabs.lock().map_err(|_| Error::Transport {
+            message: "hotkey registry poisoned".to_string(),
+        })?;
         if let Some(previous) = grabs.insert(id.to_string(), grab) {
             // The old binding must not survive the new one.
             let _ = hotkeys::unregister(&self.conn, self.screen_num, previous);
@@ -455,7 +488,9 @@ impl HotkeyService for LinuxPlatform {
         let grab = self
             .hotkey_grabs
             .lock()
-            .map_err(|_| Error::Transport { message: "hotkey registry poisoned".to_string() })?
+            .map_err(|_| Error::Transport {
+                message: "hotkey registry poisoned".to_string(),
+            })?
             .remove(id)
             .ok_or_else(|| Error::Transport {
                 message: format!("no hotkey registered as '{id}'"),
@@ -511,9 +546,13 @@ impl Fetch for LinuxPlatform {
     /// configuration), at most [`MAX_BODY_BYTES`] read here. Transport
     /// failures and non-2xx statuses both become [`Error::Transport`].
     fn get(&self, url: &str) -> Result<Vec<u8>> {
-        let mut response = self.agent.get(url).call().map_err(|error| Error::Transport {
-            message: format!("GET to {} failed: {error}", host_of(url)),
-        })?;
+        let mut response = self
+            .agent
+            .get(url)
+            .call()
+            .map_err(|error| Error::Transport {
+                message: format!("GET to {} failed: {error}", host_of(url)),
+            })?;
         let status = response.status();
         if !status.is_success() {
             return Err(Error::Transport {

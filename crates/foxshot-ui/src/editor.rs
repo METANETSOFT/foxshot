@@ -198,13 +198,21 @@ impl EditorApp {
         let drag = self.drag?;
         let kind = match self.tool {
             Tool::Rectangle => MarkKind::Rectangle,
-            Tool::Arrow => {
-                MarkKind::Arrow { from: drag.start, to: drag.current }
-            }
-            Tool::Blur => MarkKind::Blur { radius: BLUR_RADIUS },
+            Tool::Arrow => MarkKind::Arrow {
+                from: drag.start,
+                to: drag.current,
+            },
+            Tool::Blur => MarkKind::Blur {
+                radius: BLUR_RADIUS,
+            },
             _ => return None,
         };
-        Some(Mark { id: MarkId(0), kind, bounds: drag_bounds(&drag), ink: self.ink })
+        Some(Mark {
+            id: MarkId(0),
+            kind,
+            bounds: drag_bounds(&drag),
+            ink: self.ink,
+        })
     }
 
     /// The composite the user sees: the frame plus every committed mark
@@ -269,8 +277,13 @@ impl EditorApp {
         if add {
             let kind = match self.tool {
                 Tool::Rectangle => MarkKind::Rectangle,
-                Tool::Blur => MarkKind::Blur { radius: BLUR_RADIUS },
-                Tool::Arrow => MarkKind::Arrow { from: drag.start, to: drag.current },
+                Tool::Blur => MarkKind::Blur {
+                    radius: BLUR_RADIUS,
+                },
+                Tool::Arrow => MarkKind::Arrow {
+                    from: drag.start,
+                    to: drag.current,
+                },
                 _ => unreachable!("add is only true for drag tools"),
             };
             self.doc.add(kind, bounds, self.ink);
@@ -283,8 +296,11 @@ impl EditorApp {
     fn finish(&mut self, event_loop: &ActiveEventLoop, copy: bool) {
         self.commit_text();
         let flattened = flatten::flatten(&self.doc);
-        self.outcome =
-            Some(if copy { EditorOutcome::Copied(flattened) } else { EditorOutcome::Saved(flattened) });
+        self.outcome = Some(if copy {
+            EditorOutcome::Copied(flattened)
+        } else {
+            EditorOutcome::Saved(flattened)
+        });
         event_loop.exit();
     }
 
@@ -300,7 +316,11 @@ impl EditorApp {
                     self.finish(event_loop, true);
                 }
                 Key::Character(c) if c.eq_ignore_ascii_case("z") && !event.repeat => {
-                    if shift { self.doc.redo(); } else { self.doc.undo(); }
+                    if shift {
+                        self.doc.redo();
+                    } else {
+                        self.doc.undo();
+                    }
                     self.selected = None;
                     self.composite_dirty = true;
                 }
@@ -350,8 +370,9 @@ impl EditorApp {
             }
             Key::Character(c) => {
                 let c = c.as_str();
-                if let Some((tool, _)) =
-                    Tool::ALL.iter().find(|(_, key)| c.eq_ignore_ascii_case(&key.to_string()))
+                if let Some((tool, _)) = Tool::ALL
+                    .iter()
+                    .find(|(_, key)| c.eq_ignore_ascii_case(&key.to_string()))
                 {
                     let tool = *tool;
                     if self.tool == Tool::Text && tool != Tool::Text {
@@ -383,7 +404,10 @@ fn drag_bounds(drag: &Drag) -> Rect {
 fn text_mark(text: &TextEdit, ink: Ink) -> Mark {
     Mark {
         id: MarkId(0),
-        kind: MarkKind::Text { content: text.content.clone(), size: TEXT_SIZE },
+        kind: MarkKind::Text {
+            content: text.content.clone(),
+            size: TEXT_SIZE,
+        },
         bounds: Rect::from_xywh(
             text.origin.x,
             text.origin.y,
@@ -417,7 +441,9 @@ impl ApplicationHandler for EditorApp {
         _window_id: winit::window::WindowId,
         event: WindowEvent,
     ) {
-        let Some(window) = self.gpu.as_ref().map(|gpu| gpu.window.clone()) else { return };
+        let Some(window) = self.gpu.as_ref().map(|gpu| gpu.window.clone()) else {
+            return;
+        };
         match event {
             WindowEvent::CloseRequested => {
                 self.outcome = Some(EditorOutcome::Cancelled);
@@ -431,7 +457,10 @@ impl ApplicationHandler for EditorApp {
                 window.request_redraw();
             }
             WindowEvent::CursorMoved { position, .. } => {
-                self.cursor = Point { x: position.x as i32, y: position.y as i32 };
+                self.cursor = Point {
+                    x: position.x as i32,
+                    y: position.y as i32,
+                };
                 if self.drag.is_some() {
                     let point = self.image_point(self.cursor);
                     if let Some(drag) = &mut self.drag {
@@ -441,7 +470,11 @@ impl ApplicationHandler for EditorApp {
                 }
                 window.request_redraw();
             }
-            WindowEvent::MouseInput { state, button: MouseButton::Left, .. } => {
+            WindowEvent::MouseInput {
+                state,
+                button: MouseButton::Left,
+                ..
+            } => {
                 match state {
                     ElementState::Pressed => {
                         if self.over_capture(self.cursor) {
@@ -452,7 +485,10 @@ impl ApplicationHandler for EditorApp {
                                     self.composite_dirty = true;
                                 }
                                 Tool::Rectangle | Tool::Arrow | Tool::Blur => {
-                                    self.drag = Some(Drag { start: point, current: point });
+                                    self.drag = Some(Drag {
+                                        start: point,
+                                        current: point,
+                                    });
                                     self.composite_dirty = true;
                                 }
                                 Tool::StepNumber => {
@@ -470,8 +506,10 @@ impl ApplicationHandler for EditorApp {
                                 }
                                 Tool::Text => {
                                     self.commit_text();
-                                    self.text =
-                                        Some(TextEdit { origin: point, content: String::new() });
+                                    self.text = Some(TextEdit {
+                                        origin: point,
+                                        content: String::new(),
+                                    });
                                 }
                             }
                         }
@@ -543,7 +581,9 @@ struct Gpu {
 
 impl fmt::Debug for Gpu {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Gpu").field("config", &self.config).finish_non_exhaustive()
+        f.debug_struct("Gpu")
+            .field("config", &self.config)
+            .finish_non_exhaustive()
     }
 }
 
@@ -649,7 +689,10 @@ impl Gpu {
                     binding: 1,
                     resource: wgpu::BindingResource::Sampler(&sampler),
                 },
-                wgpu::BindGroupEntry { binding: 2, resource: scene_uniform.as_entire_binding() },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: scene_uniform.as_entire_binding(),
+                },
             ],
         });
         let capture_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -833,11 +876,8 @@ impl Gpu {
 
         let vertices = overlay::to_vertices(overlay_quads);
         if !vertices.is_empty() {
-            self.queue.write_buffer(
-                &self.overlay_vertices,
-                0,
-                bytemuck::cast_slice(&vertices),
-            );
+            self.queue
+                .write_buffer(&self.overlay_vertices, 0, bytemuck::cast_slice(&vertices));
         }
         self.queue.write_buffer(
             &self.overlay_uniform,
@@ -859,10 +899,14 @@ impl Gpu {
                 return;
             }
         };
-        let view = target.texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let view = target
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
         let mut encoder = self
             .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("editor") });
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("editor"),
+            });
         {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("editor pass"),
@@ -927,7 +971,13 @@ fn build_overlay(app: &EditorApp) -> Quads {
     for (index, (tool, key)) in Tool::ALL.iter().enumerate() {
         let y = PAD + index as i32 * 32;
         let active = *tool == app.tool;
-        quads.push((4, y, RAIL_W - 8, 28, if active { overlay::ACTION } else { TOOL_BG }));
+        quads.push((
+            4,
+            y,
+            RAIL_W - 8,
+            28,
+            if active { overlay::ACTION } else { TOOL_BG },
+        ));
         let label = key.to_string();
         let cell = 2;
         let text_w = text_pixel_width(&label, cell);
@@ -958,7 +1008,13 @@ fn build_overlay(app: &EditorApp) -> Quads {
     let text_w = text_pixel_width(&count, cell);
     let pad = 4;
     let x = (win_w - text_w - 2 * pad - PAD).max(RAIL_W + PAD);
-    quads.push((x - pad, PAD - pad, text_w + 2 * pad, 5 * cell + 2 * pad, COUNT_BG));
+    quads.push((
+        x - pad,
+        PAD - pad,
+        text_w + 2 * pad,
+        5 * cell + 2 * pad,
+        COUNT_BG,
+    ));
     overlay::push_text(&mut quads, x, PAD, &count, cell, WHITE);
 
     // The text caret while a text edit is in progress.

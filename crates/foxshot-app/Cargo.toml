@@ -1,6 +1,7 @@
 [package]
 name = "foxshot-app"
 version = "0.3.0"
+description = "FoxShot — screenshot capture, annotation and sharing"
 edition.workspace = true
 license.workspace = true
 authors.workspace = true
@@ -25,3 +26,34 @@ libc = "0.2"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 foxshot-platform-macos = { path = "../foxshot-platform-macos" }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+foxshot-platform-windows = { path = "../foxshot-platform-windows" }
+
+# cargo-deb (release.yml): ships the release binary as /usr/bin/foxshot.
+[package.metadata.deb]
+name = "foxshot"
+maintainer = "Metanetsoft"
+section = "utility"
+priority = "optional"
+assets = [
+    ["target/release/foxshot", "usr/bin/foxshot", "755"],
+]
+depends = "$auto"
+
+# cargo-generate-rpm (release.yml): same payload, RPM format.
+[package.metadata.generate-rpm]
+name = "foxshot"
+assets = [
+    { source = "target/release/foxshot", dest = "/usr/bin/foxshot", mode = "755" },
+]
+
+# cargo-wix (release.yml): the MSI installer. The stable GUIDs make every
+# build of FoxShot upgrade the same installed product instead of installing
+# side by side. license/eula are disabled: the PolyForm Noncommercial text
+# ships in the repository (LICENSE.md), not as an install-time click-through.
+[package.metadata.wix]
+upgrade-guid = "900f754a-f12b-4567-9a63-06585cafcd84"
+path-guid = "4677cdf0-51f7-4926-a94f-c2cc25b74c20"
+license = false
+eula = false

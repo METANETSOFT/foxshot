@@ -71,9 +71,16 @@ impl fmt::Display for Error {
             Error::Transport { message } => write!(f, "transport error: {message}"),
             Error::Manifest { message } => write!(f, "manifest error: {message}"),
             Error::InvalidPixelBuffer { expected, got } => {
-                write!(f, "invalid pixel buffer: expected {expected} bytes, got {got}")
+                write!(
+                    f,
+                    "invalid pixel buffer: expected {expected} bytes, got {got}"
+                )
             }
-            Error::ModuleIncompatible { module, needs, have } => {
+            Error::ModuleIncompatible {
+                module,
+                needs,
+                have,
+            } => {
                 write!(f, "module {module} needs core {needs}, have {have}")
             }
         }

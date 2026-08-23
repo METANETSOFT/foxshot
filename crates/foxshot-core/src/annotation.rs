@@ -152,7 +152,10 @@ impl Ink {
 impl Default for Ink {
     /// The FoxShot default ink: opaque red, 3 points wide.
     fn default() -> Self {
-        Self { colour: [0xE0, 0x1B, 0x24, 0xFF], width: 3 }
+        Self {
+            colour: [0xE0, 0x1B, 0x24, 0xFF],
+            width: 3,
+        }
     }
 }
 
@@ -339,7 +342,12 @@ impl AnnotationDocument {
         }
         let id = MarkId(self.next_id);
         self.next_id += 1;
-        let mark = Mark { id, kind, bounds, ink };
+        let mark = Mark {
+            id,
+            kind,
+            bounds,
+            ink,
+        };
         self.marks.push(mark);
         self.undo_stack.push(Edit::Delete { id });
         self.redo_stack.clear();
@@ -354,7 +362,11 @@ impl AnnotationDocument {
         };
         let mark = self.marks.remove(position);
         let note = self.notes.remove(&id);
-        self.undo_stack.push(Edit::Insert { mark, note, position });
+        self.undo_stack.push(Edit::Insert {
+            mark,
+            note,
+            position,
+        });
         self.redo_stack.clear();
         self.renumber_steps();
         self.dirty = true;
@@ -366,7 +378,11 @@ impl AnnotationDocument {
     /// Marks added later sit higher in the z-order, so the list is scanned
     /// from the end.
     pub fn mark_at(&self, point: Point) -> Option<MarkId> {
-        self.marks.iter().rev().find(|m| m.hit_test(point)).map(|m| m.id)
+        self.marks
+            .iter()
+            .rev()
+            .find(|m| m.hit_test(point))
+            .map(|m| m.id)
     }
 
     /// Sets (or replaces) the user note attached to a mark. Returns false
@@ -411,14 +427,21 @@ impl AnnotationDocument {
 
     /// The number the next [`MarkKind::StepNumber`] mark will receive.
     pub fn next_step_index(&self) -> u32 {
-        self.marks.iter().filter(|m| matches!(m.kind, MarkKind::StepNumber { .. })).count() as u32
+        self.marks
+            .iter()
+            .filter(|m| matches!(m.kind, MarkKind::StepNumber { .. }))
+            .count() as u32
             + 1
     }
 
     /// Applies an edit and returns its inverse, for the opposite stack.
     fn apply(&mut self, edit: Edit) -> Edit {
         let inverse = match edit {
-            Edit::Insert { mark, note, position } => {
+            Edit::Insert {
+                mark,
+                note,
+                position,
+            } => {
                 let id = mark.id;
                 let position = position.min(self.marks.len());
                 self.marks.insert(position, mark);
@@ -437,7 +460,11 @@ impl AnnotationDocument {
                     .expect("history entries only reference existing marks");
                 let mark = self.marks.remove(position);
                 let note = self.notes.remove(&id);
-                Edit::Insert { mark, note, position }
+                Edit::Insert {
+                    mark,
+                    note,
+                    position,
+                }
             }
         };
         self.renumber_steps();
@@ -459,11 +486,18 @@ impl AnnotationDocument {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::geometry::Size;
     use crate::Scale;
+    use crate::geometry::Size;
 
     fn test_frame() -> Frame {
-        Frame::new_filled(Size { width: 8, height: 8 }, Scale::new(1.0), [10, 20, 30, 255])
+        Frame::new_filled(
+            Size {
+                width: 8,
+                height: 8,
+            },
+            Scale::new(1.0),
+            [10, 20, 30, 255],
+        )
     }
 
     fn rect(x: i32, y: i32) -> Rect {
@@ -475,7 +509,14 @@ mod tests {
         let mut doc = AnnotationDocument::new(test_frame());
         doc.add(MarkKind::Rectangle, rect(0, 0), Ink::default());
         doc.add(MarkKind::Highlight, rect(20, 20), Ink::default());
-        doc.add(MarkKind::Text { content: "hi".into(), size: 14 }, rect(40, 40), Ink::default());
+        doc.add(
+            MarkKind::Text {
+                content: "hi".into(),
+                size: 14,
+            },
+            rect(40, 40),
+            Ink::default(),
+        );
 
         let findings = doc.findings();
         assert_eq!(findings.len(), 3);
@@ -490,9 +531,21 @@ mod tests {
     #[test]
     fn step_numbers_renumber_after_middle_removal() {
         let mut doc = AnnotationDocument::new(test_frame());
-        doc.add(MarkKind::StepNumber { index: 0 }, rect(0, 0), Ink::default());
-        let middle = doc.add(MarkKind::StepNumber { index: 0 }, rect(20, 0), Ink::default());
-        doc.add(MarkKind::StepNumber { index: 0 }, rect(40, 0), Ink::default());
+        doc.add(
+            MarkKind::StepNumber { index: 0 },
+            rect(0, 0),
+            Ink::default(),
+        );
+        let middle = doc.add(
+            MarkKind::StepNumber { index: 0 },
+            rect(20, 0),
+            Ink::default(),
+        );
+        doc.add(
+            MarkKind::StepNumber { index: 0 },
+            rect(40, 0),
+            Ink::default(),
+        );
 
         let indices: Vec<u32> = doc
             .marks()
@@ -545,8 +598,14 @@ mod tests {
         let mut doc = AnnotationDocument::new(frame);
 
         let a = doc.add(MarkKind::Rectangle, rect(0, 0), Ink::default());
-        doc.add(MarkKind::Arrow { from: Point { x: 0, y: 0 }, to: Point { x: 7, y: 7 } },
-            rect(0, 0), Ink::default());
+        doc.add(
+            MarkKind::Arrow {
+                from: Point { x: 0, y: 0 },
+                to: Point { x: 7, y: 7 },
+            },
+            rect(0, 0),
+            Ink::default(),
+        );
         doc.set_note(a, "look here".into());
         assert!(doc.remove(a));
         assert!(doc.undo());
@@ -575,15 +634,24 @@ mod tests {
         let mut doc = AnnotationDocument::new(test_frame());
         let ink = Ink::new([0, 0, 0, 255], 10);
         let id = doc.add(
-            MarkKind::Arrow { from: Point { x: 0, y: 0 }, to: Point { x: 100, y: 0 } },
+            MarkKind::Arrow {
+                from: Point { x: 0, y: 0 },
+                to: Point { x: 100, y: 0 },
+            },
             Rect::from_xywh(0, 0, 100, 1),
             ink,
         );
         let mark = doc.marks().iter().find(|m| m.id == id).unwrap();
 
-        assert!(mark.hit_test(Point { x: 50, y: 3 }), "3px from a 10px-wide stroke hits");
+        assert!(
+            mark.hit_test(Point { x: 50, y: 3 }),
+            "3px from a 10px-wide stroke hits"
+        );
         assert!(mark.hit_test(Point { x: 0, y: 0 }), "the start point hits");
         assert!(!mark.hit_test(Point { x: 50, y: 50 }), "50px away misses");
-        assert!(!mark.hit_test(Point { x: 150, y: 0 }), "past the end of the segment misses");
+        assert!(
+            !mark.hit_test(Point { x: 150, y: 0 }),
+            "past the end of the segment misses"
+        );
     }
 }

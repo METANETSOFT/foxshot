@@ -24,14 +24,15 @@ fn main() -> ExitCode {
     };
     let result = match args.first().map(String::as_str) {
         Some("text") => {
-            let text = args.get(1).cloned().unwrap_or_else(|| "foxshot".to_string());
+            let text = args
+                .get(1)
+                .cloned()
+                .unwrap_or_else(|| "foxshot".to_string());
             platform.set_text(&text)
         }
         Some("image") => {
-            let width: u32 =
-                args.get(1).and_then(|v| v.parse().ok()).unwrap_or(64);
-            let height: u32 =
-                args.get(2).and_then(|v| v.parse().ok()).unwrap_or(48);
+            let width: u32 = args.get(1).and_then(|v| v.parse().ok()).unwrap_or(64);
+            let height: u32 = args.get(2).and_then(|v| v.parse().ok()).unwrap_or(48);
             let frame = Frame::new_filled(
                 Size { width, height },
                 Scale::new(1.0),

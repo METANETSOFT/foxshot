@@ -9,7 +9,10 @@ use std::process::ExitCode;
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let title = args.first().map(String::as_str).unwrap_or("FoxShot");
-    let body = args.get(1).map(String::as_str).unwrap_or("notification test");
+    let body = args
+        .get(1)
+        .map(String::as_str)
+        .unwrap_or("notification test");
     let platform = match LinuxPlatform::connect() {
         Ok(platform) => platform,
         Err(error) => {

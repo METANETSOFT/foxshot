@@ -78,7 +78,13 @@ impl SelectorApp {
         // exactly the frame, origin top-left.
         let selection =
             SelectionState::new(Rect::from_xywh(0, 0, bounds.size.width, bounds.size.height));
-        Self { frame, bounds, selection, result: None, gpu: None }
+        Self {
+            frame,
+            bounds,
+            selection,
+            result: None,
+            gpu: None,
+        }
     }
 }
 
@@ -105,7 +111,9 @@ impl ApplicationHandler for SelectorApp {
         _window_id: winit::window::WindowId,
         event: WindowEvent,
     ) {
-        let Some(window) = self.gpu.as_ref().map(|gpu| gpu.window.clone()) else { return };
+        let Some(window) = self.gpu.as_ref().map(|gpu| gpu.window.clone()) else {
+            return;
+        };
         match event {
             WindowEvent::CloseRequested => {
                 self.selection.cancel();
@@ -118,11 +126,18 @@ impl ApplicationHandler for SelectorApp {
                 window.request_redraw();
             }
             WindowEvent::CursorMoved { position, .. } => {
-                let point = Point { x: position.x as i32, y: position.y as i32 };
+                let point = Point {
+                    x: position.x as i32,
+                    y: position.y as i32,
+                };
                 self.selection.drag_to(point);
                 window.request_redraw();
             }
-            WindowEvent::MouseInput { state, button: MouseButton::Left, .. } => {
+            WindowEvent::MouseInput {
+                state,
+                button: MouseButton::Left,
+                ..
+            } => {
                 let point = self.selection.cursor();
                 match state {
                     ElementState::Pressed => self.selection.begin(point),
@@ -131,7 +146,8 @@ impl ApplicationHandler for SelectorApp {
                 window.request_redraw();
             }
             WindowEvent::ModifiersChanged(modifiers) => {
-                self.selection.set_square_lock(modifiers.state().shift_key());
+                self.selection
+                    .set_square_lock(modifiers.state().shift_key());
                 window.request_redraw();
             }
             WindowEvent::KeyboardInput { event, .. }
@@ -204,7 +220,9 @@ struct Gpu {
 
 impl fmt::Debug for Gpu {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Gpu").field("config", &self.config).finish_non_exhaustive()
+        f.debug_struct("Gpu")
+            .field("config", &self.config)
+            .finish_non_exhaustive()
     }
 }
 
@@ -217,7 +235,10 @@ impl Gpu {
             .with_decorations(false)
             .with_resizable(false)
             .with_window_level(WindowLevel::AlwaysOnTop)
-            .with_position(winit::dpi::PhysicalPosition::new(bounds.left(), bounds.top()))
+            .with_position(winit::dpi::PhysicalPosition::new(
+                bounds.left(),
+                bounds.top(),
+            ))
             .with_inner_size(winit::dpi::PhysicalSize::new(
                 bounds.size.width.max(1),
                 bounds.size.height.max(1),
@@ -330,7 +351,10 @@ impl Gpu {
                     binding: 1,
                     resource: wgpu::BindingResource::Sampler(&sampler),
                 },
-                wgpu::BindGroupEntry { binding: 2, resource: scene_uniform.as_entire_binding() },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: scene_uniform.as_entire_binding(),
+                },
             ],
         });
         let capture_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -480,7 +504,8 @@ impl Gpu {
     }
 
     fn upload_scene_uniform(&self, uniform: &SceneUniform) {
-        self.queue.write_buffer(&self.scene_uniform, 0, bytemuck::bytes_of(uniform));
+        self.queue
+            .write_buffer(&self.scene_uniform, 0, bytemuck::bytes_of(uniform));
     }
 
     /// Draws one frame: the capture (bright inside the selection, dimmed
@@ -507,11 +532,8 @@ impl Gpu {
 
         let vertices = overlay::build(selection);
         if !vertices.is_empty() {
-            self.queue.write_buffer(
-                &self.overlay_vertices,
-                0,
-                bytemuck::cast_slice(&vertices),
-            );
+            self.queue
+                .write_buffer(&self.overlay_vertices, 0, bytemuck::cast_slice(&vertices));
         }
         self.queue.write_buffer(
             &self.overlay_uniform,
@@ -533,10 +555,14 @@ impl Gpu {
                 return;
             }
         };
-        let view = target.texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let view = target
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
         let mut encoder = self
             .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("selector") });
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("selector"),
+            });
         {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("selector pass"),

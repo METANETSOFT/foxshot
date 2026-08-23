@@ -193,9 +193,18 @@ mod tests {
     #[test]
     fn scale_physical_and_logical_roundtrip() {
         let scale = Scale::new(2.0);
-        let logical = Size { width: 100, height: 50 };
+        let logical = Size {
+            width: 100,
+            height: 50,
+        };
         let physical = scale.to_physical(logical);
-        assert_eq!(physical, Size { width: 200, height: 100 });
+        assert_eq!(
+            physical,
+            Size {
+                width: 200,
+                height: 100
+            }
+        );
         assert_eq!(scale.to_logical(physical), logical);
     }
 
@@ -211,7 +220,10 @@ mod tests {
         let a = Rect::from_xywh(0, 0, 10, 10);
         let b = Rect::from_xywh(20, 20, 10, 10);
         assert_eq!(a.union(&b), Rect::from_xywh(0, 0, 30, 30));
-        assert_eq!(a.translated(Point { x: 5, y: -5 }), Rect::from_xywh(5, -5, 10, 10));
+        assert_eq!(
+            a.translated(Point { x: 5, y: -5 }),
+            Rect::from_xywh(5, -5, 10, 10)
+        );
     }
 
     #[test]

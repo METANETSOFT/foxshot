@@ -9,8 +9,10 @@
 //! read from the environment only. Other operating systems exit non-zero
 //! with a message naming the slice that adds them.
 
-use foxshot_core::{Credentials, Frame, FreeHostTarget, ModuleRegistry, Platform, Rect, S3Target,
-    Scale, Size, UpdateChecker, UpdateManifest, UpdateReport, UpdateStatus, UploadTarget};
+use foxshot_core::{
+    Credentials, Frame, FreeHostTarget, ModuleRegistry, Platform, Rect, S3Target, Scale, Size,
+    UpdateChecker, UpdateManifest, UpdateReport, UpdateStatus, UploadTarget,
+};
 use foxshot_ui::EditorOutcome;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
@@ -83,14 +85,21 @@ fn connect() -> Result<Box<dyn Platform>, String> {
     Ok(Box::new(platform))
 }
 
-/// Every other OS is not built yet — say exactly when it lands.
-#[cfg(not(any(target_os = "linux", target_os = "macos")))]
+/// Connects the platform adapter of this operating system.
+#[cfg(target_os = "windows")]
 fn connect() -> Result<Box<dyn Platform>, String> {
-    let slice = match std::env::consts::OS {
-        "windows" => "S9",
-        _ => "not yet scheduled",
-    };
-    Err(format!("{} is not supported yet (lands in slice {slice})", std::env::consts::OS))
+    let platform =
+        foxshot_platform_windows::WindowsPlatform::connect().map_err(|e| e.to_string())?;
+    Ok(Box::new(platform))
+}
+
+/// Every other OS is not built yet — say exactly when it lands.
+#[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
+fn connect() -> Result<Box<dyn Platform>, String> {
+    Err(format!(
+        "{} is not supported yet (not yet scheduled)",
+        std::env::consts::OS
+    ))
 }
 
 fn cmd_displays() -> Result<(), String> {
@@ -167,16 +176,22 @@ fn cmd_capture(args: &[String]) -> Result<(), String> {
     let frame = match mode {
         CaptureMode::Full => {
             let primary = platform.screens().primary().map_err(|e| e.to_string())?;
-            platform.capture().grab_display(primary.id).map_err(|e| e.to_string())?
+            platform
+                .capture()
+                .grab_display(primary.id)
+                .map_err(|e| e.to_string())?
         }
-        CaptureMode::Display(id) => {
-            platform.capture().grab_display(id).map_err(|e| e.to_string())?
-        }
+        CaptureMode::Display(id) => platform
+            .capture()
+            .grab_display(id)
+            .map_err(|e| e.to_string())?,
         CaptureMode::Region(rect) => platform.capture().grab(rect).map_err(|e| e.to_string())?,
         CaptureMode::RegionSelect => {
             let primary = platform.screens().primary().map_err(|e| e.to_string())?;
-            let frame =
-                platform.capture().grab_display(primary.id).map_err(|e| e.to_string())?;
+            let frame = platform
+                .capture()
+                .grab_display(primary.id)
+                .map_err(|e| e.to_string())?;
             let size = frame.size();
             let bounds = Rect::from_xywh(0, 0, size.width, size.height);
             match foxshot_ui::RegionSelector::run(frame.clone(), bounds)
@@ -216,7 +231,10 @@ fn cmd_capture(args: &[String]) -> Result<(), String> {
     if upload {
         let key = output
             .as_ref()
-            .and_then(|path| path.file_name().map(|name| name.to_string_lossy().into_owned()))
+            .and_then(|path| {
+                path.file_name()
+                    .map(|name| name.to_string_lossy().into_owned())
+            })
             .unwrap_or_else(capture_key);
         let url = upload_bytes(platform.as_ref(), encode_png(&frame)?, &key, &target_name)?;
         println!("uploaded {key} -> {url}");
@@ -234,9 +252,7 @@ fn cmd_edit(args: &[String]) -> Result<(), String> {
     while let Some(arg) = iter.next() {
         match arg.as_str() {
             "-o" | "--output" => {
-                output = Some(PathBuf::from(
-                    iter.next().ok_or("-o needs a value")?,
-                ));
+                output = Some(PathBuf::from(iter.next().ok_or("-o needs a value")?));
             }
             other if other.starts_with('-') => {
                 return Err(format!("unknown edit option '{other}'"));
@@ -279,20 +295,29 @@ fn run_editor(frame: Frame) -> Result<EditorOutcome, String> {
 
 /// Puts `frame` on the system clipboard through the platform adapter.
 fn copy_to_clipboard(platform: &dyn Platform, frame: &Frame) -> Result<(), String> {
-    platform.clipboard().set_image(frame).map_err(|e| e.to_string())
+    platform
+        .clipboard()
+        .set_image(frame)
+        .map_err(|e| e.to_string())
 }
 
 /// Reads a PNG file into a frame (expanded to 8-bit RGBA, scale 1).
 fn read_png(path: &Path) -> Result<Frame, String> {
-    let bytes =
-        std::fs::read(path).map_err(|e| format!("cannot read {}: {e}", path.display()))?;
+    let bytes = std::fs::read(path).map_err(|e| format!("cannot read {}: {e}", path.display()))?;
     let mut decoder = png::Decoder::new(bytes.as_slice());
     decoder.set_transformations(png::Transformations::EXPAND);
-    let mut reader = decoder.read_info().map_err(|e| format!("png decoder: {e}"))?;
+    let mut reader = decoder
+        .read_info()
+        .map_err(|e| format!("png decoder: {e}"))?;
     let mut buf = vec![0; reader.output_buffer_size()];
-    let info = reader.next_frame(&mut buf).map_err(|e| format!("png decoder: {e}"))?;
+    let info = reader
+        .next_frame(&mut buf)
+        .map_err(|e| format!("png decoder: {e}"))?;
     buf.truncate(info.buffer_size());
-    let size = Size { width: info.width, height: info.height };
+    let size = Size {
+        width: info.width,
+        height: info.height,
+    };
     let pixels = match info.color_type {
         png::ColorType::Rgba => buf,
         png::ColorType::Rgb => {
@@ -303,13 +328,18 @@ fn read_png(path: &Path) -> Result<Frame, String> {
             }
             rgba
         }
-        other => return Err(format!("unsupported png colour type {other:?} (need rgb or rgba)")),
+        other => {
+            return Err(format!(
+                "unsupported png colour type {other:?} (need rgb or rgba)"
+            ));
+        }
     };
     Frame::from_rgba8(size, Scale::new(1.0), pixels).map_err(|e| e.to_string())
 }
 
 /// Object key for a capture without `-o`: `capture-<unix-seconds>.png`.
-fn capture_key() -> String {    let secs = std::time::SystemTime::now()
+fn capture_key() -> String {
+    let secs = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|since| since.as_secs())
         .unwrap_or(0);
@@ -340,12 +370,15 @@ fn parse_region(value: &str) -> Result<Rect, String> {
 /// Encodes a frame as 8-bit RGBA PNG into a fresh buffer.
 fn encode_png(frame: &Frame) -> Result<Vec<u8>, String> {
     let mut out = Vec::new();
-    let mut encoder =
-        png::Encoder::new(&mut out, frame.size().width, frame.size().height);
+    let mut encoder = png::Encoder::new(&mut out, frame.size().width, frame.size().height);
     encoder.set_color(png::ColorType::Rgba);
     encoder.set_depth(png::BitDepth::Eight);
-    let mut writer = encoder.write_header().map_err(|e| format!("png encoder: {e}"))?;
-    writer.write_image_data(frame.bytes()).map_err(|e| format!("png encoder: {e}"))?;
+    let mut writer = encoder
+        .write_header()
+        .map_err(|e| format!("png encoder: {e}"))?;
+    writer
+        .write_image_data(frame.bytes())
+        .map_err(|e| format!("png encoder: {e}"))?;
     drop(writer);
     Ok(out)
 }
@@ -365,8 +398,12 @@ fn upload_bytes(
     target_name: &str,
 ) -> Result<String, String> {
     let target = build_target(target_name)?;
-    target.validate(platform.fetch()).map_err(|e| e.to_string())?;
-    target.upload(platform.fetch(), &bytes, key).map_err(|e| e.to_string())
+    target
+        .validate(platform.fetch())
+        .map_err(|e| e.to_string())?;
+    target
+        .upload(platform.fetch(), &bytes, key)
+        .map_err(|e| e.to_string())
 }
 
 fn cmd_upload(args: &[String]) -> Result<(), String> {
@@ -394,8 +431,7 @@ fn cmd_upload(args: &[String]) -> Result<(), String> {
     }
     let file = file.ok_or("upload needs a file: foxshot upload <file> [--target r2|s3|free]")?;
     let platform = connect()?;
-    let bytes =
-        std::fs::read(&file).map_err(|e| format!("cannot read {}: {e}", file.display()))?;
+    let bytes = std::fs::read(&file).map_err(|e| format!("cannot read {}: {e}", file.display()))?;
     let key = file
         .file_name()
         .map(|name| name.to_string_lossy().into_owned())
@@ -407,8 +443,10 @@ fn cmd_upload(args: &[String]) -> Result<(), String> {
 
 /// Default accelerator for a full-desktop capture (macOS's Cmd+Shift+3,
 /// with Ctrl because X11 desktops reserve Super for the window manager).
+#[cfg(target_os = "linux")]
 const DEFAULT_FULL_KEY: &str = "Ctrl+Shift+3";
 /// Default accelerator for a region capture.
+#[cfg(target_os = "linux")]
 const DEFAULT_REGION_KEY: &str = "Ctrl+Shift+4";
 
 /// Linux daemon: binds the capture keys globally, then serves captures in a
@@ -434,8 +472,7 @@ fn cmd_daemon(args: &[String]) -> Result<(), String> {
         }
     }
 
-    let platform =
-        foxshot_platform_linux::LinuxPlatform::connect().map_err(|e| e.to_string())?;
+    let platform = foxshot_platform_linux::LinuxPlatform::connect().map_err(|e| e.to_string())?;
     use foxshot_core::platform::{HotkeyService, Paths};
     HotkeyService::register(&platform, "full", &full_key).map_err(|e| e.to_string())?;
     HotkeyService::register(&platform, "region", &region_key).map_err(|e| e.to_string())?;
@@ -446,8 +483,7 @@ fn cmd_daemon(args: &[String]) -> Result<(), String> {
         if upload { "on" } else { "off" }
     );
     let dir = Paths::captures_dir(&platform);
-    std::fs::create_dir_all(&dir)
-        .map_err(|e| format!("cannot create {}: {e}", dir.display()))?;
+    std::fs::create_dir_all(&dir).map_err(|e| format!("cannot create {}: {e}", dir.display()))?;
     loop {
         match platform.poll_hotkey(std::time::Duration::from_secs(3600)) {
             Ok(Some(id)) => daemon_capture(&platform, &dir, &id, upload),
@@ -468,8 +504,8 @@ fn daemon_capture(
 ) {
     use foxshot_core::platform::{ClipboardService, NotificationService, ScreenCapture};
     let result = (|| -> Result<(), String> {
-        let frame = ScreenCapture::grab(platform, full_bounds(platform)?)
-            .map_err(|e| e.to_string())?;
+        let frame =
+            ScreenCapture::grab(platform, full_bounds(platform)?).map_err(|e| e.to_string())?;
         let path = dir.join(capture_key());
         write_png(&path, &frame)?;
         println!(
@@ -506,7 +542,9 @@ fn daemon_capture(
 #[cfg(target_os = "linux")]
 fn full_bounds(platform: &foxshot_platform_linux::LinuxPlatform) -> Result<Rect, String> {
     use foxshot_core::platform::ScreenService;
-    Ok(ScreenService::primary(platform).map_err(|e| e.to_string())?.bounds)
+    Ok(ScreenService::primary(platform)
+        .map_err(|e| e.to_string())?
+        .bounds)
 }
 
 /// Other OSes have no global-hotkey adapter yet.
@@ -553,22 +591,27 @@ fn build_target(name: &str) -> Result<Box<dyn UploadTarget>, String> {
         "free" => Ok(Box::new(FreeHostTarget::new(
             env_value("FOXSHOT_FREE_ENDPOINT").unwrap_or_else(|| DEFAULT_FREE_ENDPOINT.to_string()),
         ))),
-        other => Err(format!("unknown upload target '{other}' (expected r2, s3 or free)")),
+        other => Err(format!(
+            "unknown upload target '{other}' (expected r2, s3 or free)"
+        )),
     }
 }
 
 /// An environment variable's value when set and non-empty.
 fn env_value(name: &str) -> Option<String> {
-    std::env::var_os(name).filter(|value| !value.is_empty()).map(|value| {
-        value.to_str().map(str::to_string).unwrap_or_default()
-    })
+    std::env::var_os(name)
+        .filter(|value| !value.is_empty())
+        .map(|value| value.to_str().map(str::to_string).unwrap_or_default())
 }
 
 /// Reads every variable in `names`. Fails listing exactly which ones are
 /// missing — names only, never values.
 fn require_env(names: &[&str]) -> Result<Vec<String>, String> {
-    let missing: Vec<&str> =
-        names.iter().copied().filter(|name| env_value(name).is_none()).collect();
+    let missing: Vec<&str> = names
+        .iter()
+        .copied()
+        .filter(|name| env_value(name).is_none())
+        .collect();
     if !missing.is_empty() {
         return Err(format!(
             "missing environment variables: {}\n\
@@ -577,7 +620,10 @@ fn require_env(names: &[&str]) -> Result<Vec<String>, String> {
             missing.join(", ")
         ));
     }
-    Ok(names.iter().map(|name| env_value(name).unwrap_or_default()).collect())
+    Ok(names
+        .iter()
+        .map(|name| env_value(name).unwrap_or_default())
+        .collect())
 }
 
 /// Where the FoxShot project publishes its update manifest.
@@ -599,7 +645,10 @@ fn cmd_update(args: &[String]) -> Result<(), String> {
 fn cmd_update_check() -> Result<(), String> {
     let registry = build_registry();
     let platform = connect()?;
-    let bytes = platform.fetch().get(MANIFEST_URL).map_err(|e| e.to_string())?;
+    let bytes = platform
+        .fetch()
+        .get(MANIFEST_URL)
+        .map_err(|e| e.to_string())?;
     let json =
         String::from_utf8(bytes).map_err(|e| format!("update manifest is not UTF-8: {e}"))?;
     let manifest = UpdateManifest::from_json(&json).map_err(|e| e.to_string())?;
@@ -620,7 +669,9 @@ fn build_registry() -> ModuleRegistry {
 fn build_registry_for_os(registry: ModuleRegistry) -> ModuleRegistry {
     registry.with_installed(
         foxshot_core::Component::Adapter("linux".to_string()),
-        foxshot_platform_linux::VERSION.parse().expect("adapter version is valid"),
+        foxshot_platform_linux::VERSION
+            .parse()
+            .expect("adapter version is valid"),
     )
 }
 
@@ -629,12 +680,25 @@ fn build_registry_for_os(registry: ModuleRegistry) -> ModuleRegistry {
 fn build_registry_for_os(registry: ModuleRegistry) -> ModuleRegistry {
     registry.with_installed(
         foxshot_core::Component::Adapter("macos".to_string()),
-        foxshot_platform_macos::VERSION.parse().expect("adapter version is valid"),
+        foxshot_platform_macos::VERSION
+            .parse()
+            .expect("adapter version is valid"),
+    )
+}
+
+/// Registers the Windows adapter at its crate version.
+#[cfg(target_os = "windows")]
+fn build_registry_for_os(registry: ModuleRegistry) -> ModuleRegistry {
+    registry.with_installed(
+        foxshot_core::Component::Adapter("windows".to_string()),
+        foxshot_platform_windows::VERSION
+            .parse()
+            .expect("adapter version is valid"),
     )
 }
 
 /// Other OSes have no adapter crate to register yet.
-#[cfg(not(any(target_os = "linux", target_os = "macos")))]
+#[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
 fn build_registry_for_os(registry: ModuleRegistry) -> ModuleRegistry {
     registry
 }
@@ -646,7 +710,11 @@ fn print_report(report: &UpdateReport) {
     }
     println!(
         "restart required to apply updates: {}",
-        if report.requires_restart() { "yes" } else { "no" }
+        if report.requires_restart() {
+            "yes"
+        } else {
+            "no"
+        }
     );
 }
 
@@ -654,15 +722,30 @@ fn print_report(report: &UpdateReport) {
 fn describe(status: &UpdateStatus) -> String {
     match status {
         UpdateStatus::UpToDate => "up to date".to_string(),
-        UpdateStatus::Available { from, to, installable } => {
-            let kind = if *installable { "installable" } else { "not installable" };
+        UpdateStatus::Available {
+            from,
+            to,
+            installable,
+        } => {
+            let kind = if *installable {
+                "installable"
+            } else {
+                "not installable"
+            };
             format!("update {from} -> {to} available ({kind})")
         }
         UpdateStatus::BlockedByCore { needs, have } => {
             format!("update blocked by core (needs core {needs}, have {have})")
         }
-        UpdateStatus::NotInstalled { available, installable } => {
-            let package = if *installable { "package published" } else { "no package published yet" };
+        UpdateStatus::NotInstalled {
+            available,
+            installable,
+        } => {
+            let package = if *installable {
+                "package published"
+            } else {
+                "no package published yet"
+            };
             format!("not installed ({available} available, {package})")
         }
     }

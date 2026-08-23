@@ -146,7 +146,16 @@ fn push_handles(quads: &mut Vec<(i32, i32, i32, i32, [f32; 4])>, rect: Rect) {
     let (l, t, r, b) = (rect.left(), rect.top(), rect.right(), rect.bottom());
     let cx = l + (r - l) / 2;
     let cy = t + (b - t) / 2;
-    for (x, y) in [(l, t), (cx, t), (r, t), (r, cy), (r, b), (cx, b), (l, b), (l, cy)] {
+    for (x, y) in [
+        (l, t),
+        (cx, t),
+        (r, t),
+        (r, cy),
+        (r, b),
+        (cx, b),
+        (l, b),
+        (l, cy),
+    ] {
         quads.push((x - HANDLE / 2, y - HANDLE / 2, HANDLE, HANDLE, ACTION));
     }
 }
@@ -164,30 +173,26 @@ fn push_readout(quads: &mut Quads, rect: Rect, bounds: Rect) {
         x = (bounds.right() - text_w - 2 * pad).max(bounds.left());
     }
     let above = rect.top() - text_h - 2 * pad >= bounds.top();
-    let y = if above { rect.top() - text_h - 2 * pad } else { rect.top() + pad };
-    quads.push((x - pad, y - pad, text_w + 2 * pad, text_h + 2 * pad, TEXT_BG));
+    let y = if above {
+        rect.top() - text_h - 2 * pad
+    } else {
+        rect.top() + pad
+    };
+    quads.push((
+        x - pad,
+        y - pad,
+        text_w + 2 * pad,
+        text_h + 2 * pad,
+        TEXT_BG,
+    ));
     push_text(quads, x, y, &text, CELL, TEXT);
 }
 
 /// Emits two triangles (six vertices) for one pixel-space quad.
-fn push_quad(
-    vertices: &mut Vec<OverlayVertex>,
-    x: i32,
-    y: i32,
-    w: i32,
-    h: i32,
-    color: [f32; 4],
-) {
+fn push_quad(vertices: &mut Vec<OverlayVertex>, x: i32, y: i32, w: i32, h: i32, color: [f32; 4]) {
     let (x0, y0) = (x as f32, y as f32);
     let (x1, y1) = ((x + w) as f32, (y + h) as f32);
-    let corners = [
-        [x0, y0],
-        [x1, y0],
-        [x0, y1],
-        [x0, y1],
-        [x1, y0],
-        [x1, y1],
-    ];
+    let corners = [[x0, y0], [x1, y0], [x0, y1], [x0, y1], [x1, y0], [x1, y1]];
     vertices.extend(corners.iter().map(|pos| OverlayVertex { pos: *pos, color }));
 }
 
@@ -215,10 +220,12 @@ mod tests {
         assert_eq!(vertices.len() % 6, 0);
         assert!(vertices.len() <= MAX_VERTICES);
         // Everything drawn sits inside the surface.
-        assert!(vertices.iter().all(|v| v.pos[0] >= 0.0
-            && v.pos[0] <= 800.0
-            && v.pos[1] >= 0.0
-            && v.pos[1] <= 600.0));
+        assert!(
+            vertices.iter().all(|v| v.pos[0] >= 0.0
+                && v.pos[0] <= 800.0
+                && v.pos[1] >= 0.0
+                && v.pos[1] <= 600.0)
+        );
         // The action colour is in there (border + handles).
         assert!(vertices.iter().any(|v| v.color == ACTION));
     }

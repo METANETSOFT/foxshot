@@ -121,7 +121,9 @@ fn keysym_of(key: &str) -> Result<u32> {
             {
                 0xFFBD + number // F1 is 0xFFBE
             } else {
-                return Err(Error::Unsupported { what: format!("key '{key}'") });
+                return Err(Error::Unsupported {
+                    what: format!("key '{key}'"),
+                });
             }
         }
     };
@@ -197,9 +199,7 @@ pub(crate) fn register(
                 let _ = conn.ungrab_key(keycode, root, ModMask::from(mods | rollback));
             }
             let message = if is_already_grabbed(&error) {
-                format!(
-                    "hotkey '{accelerator}' (id '{id}') is already grabbed by another client"
-                )
+                format!("hotkey '{accelerator}' (id '{id}') is already grabbed by another client")
             } else {
                 format!("grabbing hotkey '{accelerator}' (id '{id}') failed: {error}")
             };
@@ -269,7 +269,9 @@ pub(crate) fn poll(
             if error.kind() == std::io::ErrorKind::Interrupted {
                 continue; // a signal interrupted the wait: honour the deadline
             }
-            return Err(Error::Transport { message: format!("poll on X connection failed: {error}") });
+            return Err(Error::Transport {
+                message: format!("poll on X connection failed: {error}"),
+            });
         }
         if ready == 0 {
             return Ok(None);
@@ -279,7 +281,9 @@ pub(crate) fn poll(
 
 /// Maps any X11 transport failure into Core's error vocabulary.
 fn transport(error: impl std::fmt::Display) -> Error {
-    Error::Transport { message: error.to_string() }
+    Error::Transport {
+        message: error.to_string(),
+    }
 }
 
 #[cfg(test)]
@@ -297,7 +301,10 @@ mod tests {
 
     #[test]
     fn ctrl_alt_letter_is_lowercased() {
-        assert_eq!(parse("Ctrl+Alt+R"), (u32::from(b'r'), MOD_CONTROL | MOD_ALT));
+        assert_eq!(
+            parse("Ctrl+Alt+R"),
+            (u32::from(b'r'), MOD_CONTROL | MOD_ALT)
+        );
     }
 
     #[test]

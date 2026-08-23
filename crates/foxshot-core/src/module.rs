@@ -32,7 +32,11 @@ pub struct Version {
 impl Version {
     /// Creates a version from its three components.
     pub const fn new(major: u32, minor: u32, patch: u32) -> Self {
-        Self { major, minor, patch }
+        Self {
+            major,
+            minor,
+            patch,
+        }
     }
 }
 
@@ -137,7 +141,10 @@ impl ModuleRegistry {
         let core = crate::VERSION
             .parse()
             .expect("CARGO_PKG_VERSION is always a valid version");
-        Self { core, installed: BTreeMap::new() }
+        Self {
+            core,
+            installed: BTreeMap::new(),
+        }
     }
 
     /// Builder-style: additionally marks `component` as installed at
@@ -173,10 +180,14 @@ impl ModuleRegistry {
             component: Component::Core,
             state: ModuleState::Installed(self.core),
         });
-        infos.extend(self.installed.iter().map(|(component, version)| ModuleInfo {
-            component: component.clone(),
-            state: ModuleState::Installed(*version),
-        }));
+        infos.extend(
+            self.installed
+                .iter()
+                .map(|(component, version)| ModuleInfo {
+                    component: component.clone(),
+                    state: ModuleState::Installed(*version),
+                }),
+        );
         infos
     }
 

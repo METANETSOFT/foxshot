@@ -27,16 +27,27 @@ impl Frame {
         for chunk in pixels.chunks_exact_mut(BYTES_PER_PIXEL) {
             chunk.copy_from_slice(&colour);
         }
-        Frame { size, scale, pixels }
+        Frame {
+            size,
+            scale,
+            pixels,
+        }
     }
 
     /// Creates a frame from an existing RGBA8 buffer, validating its length.
     pub fn from_rgba8(size: Size, scale: Scale, pixels: Vec<u8>) -> Result<Frame> {
         let expected = size.width as usize * size.height as usize * BYTES_PER_PIXEL;
         if pixels.len() != expected {
-            return Err(Error::InvalidPixelBuffer { expected, got: pixels.len() });
+            return Err(Error::InvalidPixelBuffer {
+                expected,
+                got: pixels.len(),
+            });
         }
-        Ok(Frame { size, scale, pixels })
+        Ok(Frame {
+            size,
+            scale,
+            pixels,
+        })
     }
 
     /// Frame size in physical pixels.
@@ -68,7 +79,10 @@ impl Frame {
     pub fn crop(&self, rect: Rect) -> Result<Frame> {
         let bounds = Rect::from_xywh(0, 0, self.size.width, self.size.height);
         if rect.is_empty() || rect.intersection(&bounds) != Some(rect) {
-            return Err(Error::RectOutOfBounds { requested: rect, bounds });
+            return Err(Error::RectOutOfBounds {
+                requested: rect,
+                bounds,
+            });
         }
         let width = self.size.width as usize;
         let row_bytes = rect.size.width as usize * BYTES_PER_PIXEL;
@@ -77,7 +91,11 @@ impl Frame {
             let start = (row as usize * width + rect.left() as usize) * BYTES_PER_PIXEL;
             out.extend_from_slice(&self.pixels[start..start + row_bytes]);
         }
-        Ok(Frame { size: rect.size, scale: self.scale, pixels: out })
+        Ok(Frame {
+            size: rect.size,
+            scale: self.scale,
+            pixels: out,
+        })
     }
 }
 
@@ -100,7 +118,13 @@ mod tests {
         let frame = gradient_frame(8, 8);
         let before = frame.bytes().to_vec();
         let cropped = frame.crop(Rect::from_xywh(2, 2, 4, 4)).unwrap();
-        assert_eq!(cropped.size(), Size { width: 4, height: 4 });
+        assert_eq!(
+            cropped.size(),
+            Size {
+                width: 4,
+                height: 4
+            }
+        );
         let mut expected = Vec::new();
         for y in 2..6usize {
             let start = (y * 8 + 2) * 4;
@@ -113,9 +137,22 @@ mod tests {
 
     #[test]
     fn from_rgba8_rejects_wrong_length() {
-        let err = Frame::from_rgba8(Size { width: 4, height: 4 }, Scale::new(1.0), vec![0u8; 10])
-            .unwrap_err();
-        assert_eq!(err, Error::InvalidPixelBuffer { expected: 64, got: 10 });
+        let err = Frame::from_rgba8(
+            Size {
+                width: 4,
+                height: 4,
+            },
+            Scale::new(1.0),
+            vec![0u8; 10],
+        )
+        .unwrap_err();
+        assert_eq!(
+            err,
+            Error::InvalidPixelBuffer {
+                expected: 64,
+                got: 10
+            }
+        );
     }
 
     #[test]
@@ -133,7 +170,14 @@ mod tests {
 
     #[test]
     fn new_filled_paints_every_pixel() {
-        let frame = Frame::new_filled(Size { width: 3, height: 2 }, Scale::new(1.0), [1, 2, 3, 4]);
+        let frame = Frame::new_filled(
+            Size {
+                width: 3,
+                height: 2,
+            },
+            Scale::new(1.0),
+            [1, 2, 3, 4],
+        );
         assert_eq!(frame.pixel_count(), 6);
         assert!(frame.bytes().chunks_exact(4).all(|c| c == [1, 2, 3, 4]));
     }

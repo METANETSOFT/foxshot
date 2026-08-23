@@ -155,7 +155,9 @@ pub trait Fetch {
         headers: &[(String, String)],
     ) -> Result<String> {
         let _ = (url, body, content_type, headers);
-        Err(Error::Unsupported { what: "PUT with custom headers".to_string() })
+        Err(Error::Unsupported {
+            what: "PUT with custom headers".to_string(),
+        })
     }
 }
 

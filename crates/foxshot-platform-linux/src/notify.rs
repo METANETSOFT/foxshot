@@ -17,7 +17,10 @@ const EXPIRE_TIMEOUT_MS: i32 = 5000;
 /// Shows a notification and returns the id the notification daemon assigned
 /// to it.
 pub(super) fn notify(title: &str, body: &str) -> Result<u32> {
-    if std::env::var_os("DBUS_SESSION_BUS_ADDRESS").filter(|value| !value.is_empty()).is_none() {
+    if std::env::var_os("DBUS_SESSION_BUS_ADDRESS")
+        .filter(|value| !value.is_empty())
+        .is_none()
+    {
         return Err(Error::Unsupported {
             what: "desktop notifications: the DBus session bus is absent \
                    (DBUS_SESSION_BUS_ADDRESS is not set)"
@@ -55,7 +58,10 @@ pub(super) fn notify(title: &str, body: &str) -> Result<u32> {
         .map_err(|error| Error::Transport {
             message: format!("org.freedesktop.Notifications.Notify failed: {error}"),
         })?;
-    message.body().deserialize::<u32>().map_err(|error| Error::Transport {
-        message: format!("malformed Notify reply: {error}"),
-    })
+    message
+        .body()
+        .deserialize::<u32>()
+        .map_err(|error| Error::Transport {
+            message: format!("malformed Notify reply: {error}"),
+        })
 }

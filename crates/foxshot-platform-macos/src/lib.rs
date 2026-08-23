@@ -27,12 +27,12 @@ use core_graphics::access::ScreenCaptureAccess;
 use core_graphics::display::CGDisplay;
 use core_graphics::image::CGImage;
 use foxshot_core::error::{Error, Result};
-use foxshot_core::frame::{Frame, BYTES_PER_PIXEL};
+use foxshot_core::frame::{BYTES_PER_PIXEL, Frame};
 use foxshot_core::geometry::{Point, Rect, Scale, Size};
 use foxshot_core::platform::{
-    ButtonSide, ChromeStyle, ClipboardService, Display, Fetch, HotkeyService,
-    NotificationService, Paths, Permission, PermissionService, PermissionState, Platform,
-    ScreenCapture, ScreenService, WindowChrome,
+    ButtonSide, ChromeStyle, ClipboardService, Display, Fetch, HotkeyService, NotificationService,
+    Paths, Permission, PermissionService, PermissionState, Platform, ScreenCapture, ScreenService,
+    WindowChrome,
 };
 use std::path::PathBuf;
 use std::time::Duration;
@@ -66,12 +66,16 @@ impl std::fmt::Debug for MacosPlatform {
 
 /// Maps any displayable transport failure into Core's error vocabulary.
 fn transport(error: impl std::fmt::Display) -> Error {
-    Error::Transport { message: error.to_string() }
+    Error::Transport {
+        message: error.to_string(),
+    }
 }
 
 /// Builds the "not implemented yet" error for capabilities of later slices.
 fn unsupported(capability: &str, slice: &str) -> Error {
-    Error::Unsupported { what: format!("{capability} (lands in slice {slice})") }
+    Error::Unsupported {
+        what: format!("{capability} (lands in slice {slice})"),
+    }
 }
 
 impl MacosPlatform {
@@ -164,7 +168,9 @@ impl MacosPlatform {
     fn image_to_frame(image: &CGImage, scale: Scale) -> Result<Frame> {
         let bits = image.bits_per_pixel();
         if bits != 32 {
-            return Err(Error::Unsupported { what: format!("{bits} bits per pixel") });
+            return Err(Error::Unsupported {
+                what: format!("{bits} bits per pixel"),
+            });
         }
         let width = image.width();
         let height = image.height();
@@ -175,9 +181,15 @@ impl MacosPlatform {
         let needed = stride
             .checked_mul(height.saturating_sub(1))
             .and_then(|n| n.checked_add(width * BYTES_PER_PIXEL))
-            .ok_or(Error::InvalidPixelBuffer { expected: usize::MAX, got: bytes.len() })?;
+            .ok_or(Error::InvalidPixelBuffer {
+                expected: usize::MAX,
+                got: bytes.len(),
+            })?;
         if bytes.len() < needed {
-            return Err(Error::InvalidPixelBuffer { expected: needed, got: bytes.len() });
+            return Err(Error::InvalidPixelBuffer {
+                expected: needed,
+                got: bytes.len(),
+            });
         }
         let mut pixels = vec![0u8; width * height * BYTES_PER_PIXEL];
         for y in 0..height {
@@ -191,16 +203,24 @@ impl MacosPlatform {
                 pixels[offset + 3] = bgra[3]; // A
             }
         }
-        let size = Size { width: width as u32, height: height as u32 };
+        let size = Size {
+            width: width as u32,
+            height: height as u32,
+        };
         Frame::from_rgba8(size, scale, pixels)
     }
 
     /// Captures one already-resolved display via `CGDisplayCreateImage`.
     /// The caller must have run [`MacosPlatform::ensure_capture_permission`].
     fn capture_display_image(&self, display: &Display) -> Result<Frame> {
-        let image = CGDisplay::new(display.id).image().ok_or_else(|| Error::Transport {
-            message: format!("CGDisplayCreateImage returned null for display {}", display.id),
-        })?;
+        let image = CGDisplay::new(display.id)
+            .image()
+            .ok_or_else(|| Error::Transport {
+                message: format!(
+                    "CGDisplayCreateImage returned null for display {}",
+                    display.id
+                ),
+            })?;
         Self::image_to_frame(&image, display.scale)
     }
 }
@@ -238,11 +258,17 @@ impl ScreenService for MacosPlatform {
     /// (`CGMainDisplayID`, reported by `CGDisplayIsMain`) is the primary.
     fn displays(&self) -> Result<Vec<Display>> {
         let ids = CGDisplay::active_displays().map_err(transport)?;
-        Ok(ids.into_iter().map(MacosPlatform::describe_display).collect())
+        Ok(ids
+            .into_iter()
+            .map(MacosPlatform::describe_display)
+            .collect())
     }
 
     fn primary(&self) -> Result<Display> {
-        self.displays()?.into_iter().find(|d| d.is_primary).ok_or(Error::NoDisplays)
+        self.displays()?
+            .into_iter()
+            .find(|d| d.is_primary)
+            .ok_or(Error::NoDisplays)
     }
 }
 
@@ -265,14 +291,19 @@ impl ScreenCapture for MacosPlatform {
         let canvas_size = canvas_scale.to_physical(rect.size);
         let desktop = Self::desktop_bounds(&displays)?;
         if canvas_size.width == 0 || canvas_size.height == 0 {
-            return Err(Error::RectOutOfBounds { requested: rect, bounds: desktop });
+            return Err(Error::RectOutOfBounds {
+                requested: rect,
+                bounds: desktop,
+            });
         }
 
         let mut pixels =
             vec![0u8; canvas_size.width as usize * canvas_size.height as usize * BYTES_PER_PIXEL];
         let mut covered = false;
         for display in &displays {
-            let Some(overlap) = rect.intersection(&display.bounds) else { continue };
+            let Some(overlap) = rect.intersection(&display.bounds) else {
+                continue;
+            };
             covered = true;
             let full = self.capture_display_image(display)?;
             // The overlap in the display's own coordinate space, in physical
@@ -286,7 +317,9 @@ impl ScreenCapture for MacosPlatform {
             );
             let physical = display.scale.rect_to_physical(local);
             let frame_bounds = Rect::from_xywh(0, 0, full.size().width, full.size().height);
-            let Some(crop_rect) = physical.intersection(&frame_bounds) else { continue };
+            let Some(crop_rect) = physical.intersection(&frame_bounds) else {
+                continue;
+            };
             if crop_rect.is_empty() {
                 continue;
             }
@@ -298,7 +331,10 @@ impl ScreenCapture for MacosPlatform {
             blit(&mut pixels, canvas_size, dest, &cropped);
         }
         if !covered {
-            return Err(Error::RectOutOfBounds { requested: rect, bounds: desktop });
+            return Err(Error::RectOutOfBounds {
+                requested: rect,
+                bounds: desktop,
+            });
         }
         Frame::from_rgba8(canvas_size, canvas_scale, pixels)
     }
@@ -309,7 +345,9 @@ impl ScreenCapture for MacosPlatform {
         let display = displays
             .iter()
             .find(|d| d.id == display_id)
-            .ok_or_else(|| Error::Unsupported { what: format!("unknown display id {display_id}") })?;
+            .ok_or_else(|| Error::Unsupported {
+                what: format!("unknown display id {display_id}"),
+            })?;
         self.capture_display_image(display)
     }
 }
@@ -415,9 +453,13 @@ impl Fetch for MacosPlatform {
     /// configuration), at most [`MAX_BODY_BYTES`] read here. Transport
     /// failures and non-2xx statuses both become [`Error::Transport`].
     fn get(&self, url: &str) -> Result<Vec<u8>> {
-        let mut response = self.agent.get(url).call().map_err(|error| Error::Transport {
-            message: format!("GET to {} failed: {error}", host_of(url)),
-        })?;
+        let mut response = self
+            .agent
+            .get(url)
+            .call()
+            .map_err(|error| Error::Transport {
+                message: format!("GET to {} failed: {error}", host_of(url)),
+            })?;
         let status = response.status();
         if !status.is_success() {
             return Err(Error::Transport {
@@ -495,7 +537,10 @@ impl Paths for MacosPlatform {
 
     /// `~/Library/Application Support/foxshot` — the macOS config location.
     fn config_dir(&self) -> PathBuf {
-        home().join("Library").join("Application Support").join("foxshot")
+        home()
+            .join("Library")
+            .join("Application Support")
+            .join("foxshot")
     }
 }
 

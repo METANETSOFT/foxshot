@@ -11,14 +11,14 @@
 use foxshot_core::error::{Error, Result};
 use foxshot_core::frame::Frame;
 use std::sync::mpsc;
-use x11rb::connection::{Connection, RequestConnection as _};
-use x11rb::protocol::xproto::{
-    Atom, AtomEnum, ConnectionExt as _, CreateWindowAux, EventMask, PropMode, SelectionNotifyEvent,
-    SelectionRequestEvent, WindowClass, SELECTION_NOTIFY_EVENT,
-};
-use x11rb::protocol::Event;
-use x11rb::rust_connection::RustConnection;
 use x11rb::CURRENT_TIME;
+use x11rb::connection::{Connection, RequestConnection as _};
+use x11rb::protocol::Event;
+use x11rb::protocol::xproto::{
+    Atom, AtomEnum, ConnectionExt as _, CreateWindowAux, EventMask, PropMode,
+    SELECTION_NOTIFY_EVENT, SelectionNotifyEvent, SelectionRequestEvent, WindowClass,
+};
+use x11rb::rust_connection::RustConnection;
 
 /// What the clipboard serves after a `set_*` call.
 #[derive(Debug)]
@@ -76,12 +76,14 @@ pub(super) fn encode_png(frame: &Frame) -> Result<Vec<u8>> {
     let mut encoder = png::Encoder::new(&mut out, frame.size().width, frame.size().height);
     encoder.set_color(png::ColorType::Rgba);
     encoder.set_depth(png::BitDepth::Eight);
-    let mut writer = encoder
-        .write_header()
-        .map_err(|error| Error::Transport { message: format!("png encoder: {error}") })?;
+    let mut writer = encoder.write_header().map_err(|error| Error::Transport {
+        message: format!("png encoder: {error}"),
+    })?;
     writer
         .write_image_data(frame.bytes())
-        .map_err(|error| Error::Transport { message: format!("png encoder: {error}") })?;
+        .map_err(|error| Error::Transport {
+            message: format!("png encoder: {error}"),
+        })?;
     drop(writer);
     Ok(out)
 }
@@ -124,11 +126,7 @@ fn serve(payload: Payload, sender: mpsc::Sender<Result<()>>) -> Result<()> {
 
 /// Creates the owner window, interns atoms, checks the payload fits one
 /// request, and takes ownership of CLIPBOARD.
-fn setup(
-    conn: &RustConnection,
-    screen_num: usize,
-    payload: &Payload,
-) -> Result<(u32, Atoms)> {
+fn setup(conn: &RustConnection, screen_num: usize, payload: &Payload) -> Result<(u32, Atoms)> {
     let atoms = Atoms {
         clipboard: intern(conn, "CLIPBOARD")?,
         targets: intern(conn, "TARGETS")?,
@@ -188,7 +186,12 @@ fn setup(
 
 /// Answers one SelectionRequest: sets the requested property on the
 /// requestor (or refuses by answering `None`) and sends SelectionNotify.
-fn answer(conn: &RustConnection, request: &SelectionRequestEvent, payload: &Payload, atoms: &Atoms) {
+fn answer(
+    conn: &RustConnection,
+    request: &SelectionRequestEvent,
+    payload: &Payload,
+    atoms: &Atoms,
+) {
     // ICCCM: a request with property None uses the obsolete convention of
     // storing onto the target atom.
     let property = if request.property == u32::from(AtomEnum::NONE) {
@@ -207,7 +210,11 @@ fn answer(conn: &RustConnection, request: &SelectionRequestEvent, payload: &Payl
         requestor: request.requestor,
         selection: request.selection,
         target: request.target,
-        property: if served.is_ok() { property } else { u32::from(AtomEnum::NONE) },
+        property: if served.is_ok() {
+            property
+        } else {
+            u32::from(AtomEnum::NONE)
+        },
     };
     let _ = conn.send_event(false, request.requestor, EventMask::NO_EVENT, notify);
     let _ = conn.flush();
@@ -295,5 +302,7 @@ fn intern(conn: &RustConnection, name: &str) -> Result<Atom> {
 
 /// Maps any X11 transport failure into Core's error vocabulary.
 fn transport(error: impl std::fmt::Display) -> Error {
-    Error::Transport { message: error.to_string() }
+    Error::Transport {
+        message: error.to_string(),
+    }
 }

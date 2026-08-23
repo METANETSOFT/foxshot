@@ -18,9 +18,27 @@ pub(crate) fn has_glyph(ch: char) -> bool {
     ch == ' '
         || ch.is_ascii_digit()
         || ch.is_ascii_alphabetic()
-        || matches!(ch,
-            '.' | ',' | '-' | '_' | ':' | ';' | '!' | '?' | '\'' | '(' | ')' | '/' | '+' | '='
-            | '@' | '#' | '<' | '>' | '|')
+        || matches!(
+            ch,
+            '.' | ','
+                | '-'
+                | '_'
+                | ':'
+                | ';'
+                | '!'
+                | '?'
+                | '\''
+                | '('
+                | ')'
+                | '/'
+                | '+'
+                | '='
+                | '@'
+                | '#'
+                | '<'
+                | '>'
+                | '|'
+        )
 }
 
 /// The 3×5 bitmap of `ch`, one byte per row, bit 2 the leftmost cell.
@@ -95,7 +113,10 @@ mod tests {
     #[test]
     fn digits_have_ink_and_space_is_blank() {
         for ch in "0123456789".chars() {
-            assert!(glyph(ch).iter().any(|row| *row != 0), "glyph '{ch}' is blank");
+            assert!(
+                glyph(ch).iter().any(|row| *row != 0),
+                "glyph '{ch}' is blank"
+            );
         }
         assert_eq!(glyph(' '), [0; 5]);
         assert!(has_glyph(' '));
@@ -106,7 +127,10 @@ mod tests {
     fn every_letter_has_a_glyph_and_uppercase_matches() {
         for ch in 'a'..='z' {
             assert!(has_glyph(ch), "'{ch}' reports no glyph");
-            assert!(glyph(ch).iter().any(|row| *row != 0), "glyph '{ch}' is blank");
+            assert!(
+                glyph(ch).iter().any(|row| *row != 0),
+                "glyph '{ch}' is blank"
+            );
             assert_eq!(glyph(ch), glyph(ch.to_ascii_uppercase()));
         }
     }

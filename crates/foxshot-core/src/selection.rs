@@ -336,7 +336,10 @@ impl SelectionState {
                 x: (rect.left() + dx).clamp(self.bounds.left(), max_x),
                 y: (rect.top() + dy).clamp(self.bounds.top(), max_y),
             },
-            size: Size { width: rect.size.width, height: rect.size.height },
+            size: Size {
+                width: rect.size.width,
+                height: rect.size.height,
+            },
         }
     }
 }
@@ -437,10 +440,22 @@ mod tests {
         sel.begin(Point { x: 100, y: 100 });
         sel.drag_to(Point { x: 300, y: 240 });
         sel.finish();
-        assert_eq!(sel.handle_at(Point { x: 102, y: 99 }, 4), Some(Handle::TopLeft));
-        assert_eq!(sel.handle_at(Point { x: 200, y: 170 }, 4), Some(Handle::Body));
-        assert_eq!(sel.handle_at(Point { x: 200, y: 101 }, 4), Some(Handle::Top));
-        assert_eq!(sel.handle_at(Point { x: 299, y: 170 }, 4), Some(Handle::Right));
+        assert_eq!(
+            sel.handle_at(Point { x: 102, y: 99 }, 4),
+            Some(Handle::TopLeft)
+        );
+        assert_eq!(
+            sel.handle_at(Point { x: 200, y: 170 }, 4),
+            Some(Handle::Body)
+        );
+        assert_eq!(
+            sel.handle_at(Point { x: 200, y: 101 }, 4),
+            Some(Handle::Top)
+        );
+        assert_eq!(
+            sel.handle_at(Point { x: 299, y: 170 }, 4),
+            Some(Handle::Right)
+        );
         assert_eq!(sel.handle_at(Point { x: 900, y: 900 }, 4), None);
     }
 
