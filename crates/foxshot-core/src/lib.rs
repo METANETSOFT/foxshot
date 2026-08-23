@@ -13,6 +13,7 @@ pub mod module;
 pub mod platform;
 pub mod testing;
 pub mod update;
+pub mod upload;
 
 pub use annotation::{AnnotationDocument, Finding, Ink, Mark, MarkId, MarkKind};
 pub use error::{Error, Result};
@@ -26,6 +27,9 @@ pub use platform::{
 };
 pub use testing::NullPlatform;
 pub use update::{ManifestEntry, UpdateChecker, UpdateManifest, UpdateReport, UpdateStatus};
+pub use upload::{
+    Credentials, DrainReport, FreeHostTarget, PendingUpload, S3Target, UploadQueue, UploadTarget,
+};
 
 /// Crate version, taken from the package manifest at build time.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

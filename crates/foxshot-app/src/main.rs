@@ -3,11 +3,14 @@
 //! Slice S2 surface: display enumeration and full/display/region capture to
 //! PNG, on Linux/X11; slice S3 adds the macOS adapter. Slice S8 adds
 //! `update --check`: fetch the published update manifest through the
-//! platform's `Fetch` and report what would update. Other operating systems
-//! exit non-zero with a message naming the slice that adds them.
+//! platform's `Fetch` and report what would update. Slice S6 adds
+//! `upload <file> [--target r2|s3|free]` and `capture --upload`: sends a PNG
+//! to Cloudflare R2, Amazon S3 or an anonymous free host, with credentials
+//! read from the environment only. Other operating systems exit non-zero
+//! with a message naming the slice that adds them.
 
-use foxshot_core::{Frame, ModuleRegistry, Platform, Rect, UpdateChecker, UpdateManifest,
-    UpdateReport, UpdateStatus};
+use foxshot_core::{Credentials, Frame, FreeHostTarget, ModuleRegistry, Platform, Rect, S3Target,
+    UpdateChecker, UpdateManifest, UpdateReport, UpdateStatus, UploadTarget};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
@@ -30,6 +33,7 @@ fn run(args: &[String]) -> Result<(), String> {
         }
         Some("displays") => cmd_displays(),
         Some("capture") => cmd_capture(&args[1..]),
+        Some("upload") => cmd_upload(&args[1..]),
         Some("update") => cmd_update(&args[1..]),
         Some("--help") | Some("-h") => {
             print_usage();
@@ -47,9 +51,10 @@ fn print_usage() {
     println!(
         "foxshot {version}\n\
          Usage:\n\
-         \x20 foxshot capture --full -o <path>\n\
+         \x20 foxshot capture --full -o <path> [--upload [--target r2|s3|free]]\n\
          \x20 foxshot capture --display <id> -o <path>\n\
          \x20 foxshot capture --region <x>,<y>,<w>,<h> -o <path>\n\
+         \x20 foxshot upload <file> [--target r2|s3|free]\n\
          \x20 foxshot displays\n\
          \x20 foxshot update --check\n\
          \x20 foxshot --version\n\
@@ -114,6 +119,8 @@ enum CaptureMode {
 fn cmd_capture(args: &[String]) -> Result<(), String> {
     let mut mode: Option<CaptureMode> = None;
     let mut output: Option<PathBuf> = None;
+    let mut upload = false;
+    let mut target_name = "r2".to_string();
     let mut iter = args.iter();
     while let Some(arg) = iter.next() {
         let mut next = |flag: &str| -> Result<&String, String> {
@@ -133,11 +140,15 @@ fn cmd_capture(args: &[String]) -> Result<(), String> {
                 set_mode(&mut mode, CaptureMode::Region(parse_region(value)?))?;
             }
             "-o" | "--output" => output = Some(PathBuf::from(next("-o")?)),
+            "--upload" => upload = true,
+            "--target" => target_name = next("--target")?.clone(),
             other => return Err(format!("unknown capture option '{other}'")),
         }
     }
     let mode = mode.ok_or("capture needs one of --full, --display <id>, --region <x>,<y>,<w>,<h>")?;
-    let output = output.ok_or("capture needs -o <path>")?;
+    if output.is_none() && !upload {
+        return Err("capture needs -o <path> (or --upload to send it straight to a target)".into());
+    }
 
     let platform = connect()?;
     let frame = match mode {
@@ -150,14 +161,32 @@ fn cmd_capture(args: &[String]) -> Result<(), String> {
         }
         CaptureMode::Region(rect) => platform.capture().grab(rect).map_err(|e| e.to_string())?,
     };
-    write_png(&output, &frame)?;
-    println!(
-        "captured {w}x{h} -> {path}",
-        w = frame.size().width,
-        h = frame.size().height,
-        path = output.display()
-    );
+    if let Some(path) = &output {
+        write_png(path, &frame)?;
+        println!(
+            "captured {w}x{h} -> {path}",
+            w = frame.size().width,
+            h = frame.size().height,
+            path = path.display()
+        );
+    }
+    if upload {
+        let key = output
+            .as_ref()
+            .and_then(|path| path.file_name().map(|name| name.to_string_lossy().into_owned()))
+            .unwrap_or_else(capture_key);
+        upload_bytes(platform.as_ref(), encode_png(&frame)?, &key, &target_name)?;
+    }
     Ok(())
+}
+
+/// Object key for a capture without `-o`: `capture-<unix-seconds>.png`.
+fn capture_key() -> String {
+    let secs = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|since| since.as_secs())
+        .unwrap_or(0);
+    format!("capture-{secs}.png")
 }
 
 fn set_mode(mode: &mut Option<CaptureMode>, value: CaptureMode) -> Result<(), String> {
@@ -181,16 +210,137 @@ fn parse_region(value: &str) -> Result<Rect, String> {
     Ok(Rect::from_xywh(x, y, width, height))
 }
 
-/// Encodes a frame as 8-bit RGBA PNG.
-fn write_png(path: &Path, frame: &Frame) -> Result<(), String> {
-    let file = std::fs::File::create(path)
-        .map_err(|e| format!("cannot create {}: {e}", path.display()))?;
+/// Encodes a frame as 8-bit RGBA PNG into a fresh buffer.
+fn encode_png(frame: &Frame) -> Result<Vec<u8>, String> {
+    let mut out = Vec::new();
     let mut encoder =
-        png::Encoder::new(std::io::BufWriter::new(file), frame.size().width, frame.size().height);
+        png::Encoder::new(&mut out, frame.size().width, frame.size().height);
     encoder.set_color(png::ColorType::Rgba);
     encoder.set_depth(png::BitDepth::Eight);
     let mut writer = encoder.write_header().map_err(|e| format!("png encoder: {e}"))?;
-    writer.write_image_data(frame.bytes()).map_err(|e| format!("png encoder: {e}"))
+    writer.write_image_data(frame.bytes()).map_err(|e| format!("png encoder: {e}"))?;
+    drop(writer);
+    Ok(out)
+}
+
+/// Writes a frame as an 8-bit RGBA PNG file.
+fn write_png(path: &Path, frame: &Frame) -> Result<(), String> {
+    std::fs::write(path, encode_png(frame)?)
+        .map_err(|e| format!("cannot write {}: {e}", path.display()))
+}
+
+/// Uploads `bytes` under `key` to the named target, after validating the
+/// target through the platform's `Fetch`. Prints the resulting URL.
+fn upload_bytes(
+    platform: &dyn Platform,
+    bytes: Vec<u8>,
+    key: &str,
+    target_name: &str,
+) -> Result<(), String> {
+    let target = build_target(target_name)?;
+    target.validate(platform.fetch()).map_err(|e| e.to_string())?;
+    let url = target.upload(platform.fetch(), &bytes, key).map_err(|e| e.to_string())?;
+    println!("uploaded {key} -> {url}");
+    Ok(())
+}
+
+fn cmd_upload(args: &[String]) -> Result<(), String> {
+    let mut file: Option<PathBuf> = None;
+    let mut target_name = "r2".to_string();
+    let mut iter = args.iter();
+    while let Some(arg) = iter.next() {
+        match arg.as_str() {
+            "--target" => {
+                target_name = iter
+                    .next()
+                    .ok_or("--target needs a value (r2, s3 or free)")?
+                    .clone();
+            }
+            other if other.starts_with('-') => {
+                return Err(format!("unknown upload option '{other}'"));
+            }
+            other => {
+                if file.is_some() {
+                    return Err(format!("unexpected extra argument '{other}'"));
+                }
+                file = Some(PathBuf::from(other));
+            }
+        }
+    }
+    let file = file.ok_or("upload needs a file: foxshot upload <file> [--target r2|s3|free]")?;
+    let platform = connect()?;
+    let bytes =
+        std::fs::read(&file).map_err(|e| format!("cannot read {}: {e}", file.display()))?;
+    let key = file
+        .file_name()
+        .map(|name| name.to_string_lossy().into_owned())
+        .ok_or_else(|| format!("cannot derive an object key from {}", file.display()))?;
+    upload_bytes(platform.as_ref(), bytes, &key, &target_name)
+}
+
+/// Default endpoint of the anonymous `--target free` host.
+const DEFAULT_FREE_ENDPOINT: &str = "https://transfer.sh";
+
+/// Builds the upload target named on the command line.
+///
+/// Credentials come from the process environment **only** — never a file,
+/// never a flag (a flag would land in shell history). When a required
+/// variable is missing the error names exactly which variables the target
+/// needs; values that were read are never printed.
+fn build_target(name: &str) -> Result<Box<dyn UploadTarget>, String> {
+    match name {
+        "r2" => {
+            let values = require_env(&[
+                "FOXSHOT_R2_ACCOUNT_ID",
+                "FOXSHOT_R2_BUCKET",
+                "FOXSHOT_R2_ACCESS_KEY_ID",
+                "FOXSHOT_R2_SECRET_ACCESS_KEY",
+            ])?;
+            let creds = Credentials::new(values[2].clone(), values[3].clone());
+            let mut target = S3Target::r2(&values[0], &values[1], creds);
+            if let Some(base) = env_value("FOXSHOT_R2_PUBLIC_BASE") {
+                target = target.with_public_base(base);
+            }
+            Ok(Box::new(target))
+        }
+        "s3" => {
+            let values = require_env(&[
+                "FOXSHOT_S3_REGION",
+                "FOXSHOT_S3_BUCKET",
+                "FOXSHOT_S3_ACCESS_KEY_ID",
+                "FOXSHOT_S3_SECRET_ACCESS_KEY",
+            ])?;
+            let creds = Credentials::new(values[2].clone(), values[3].clone());
+            Ok(Box::new(S3Target::aws(&values[0], &values[1], creds)))
+        }
+        "free" => Ok(Box::new(FreeHostTarget::new(
+            env_value("FOXSHOT_FREE_ENDPOINT").unwrap_or_else(|| DEFAULT_FREE_ENDPOINT.to_string()),
+        ))),
+        other => Err(format!("unknown upload target '{other}' (expected r2, s3 or free)")),
+    }
+}
+
+/// An environment variable's value when set and non-empty.
+fn env_value(name: &str) -> Option<String> {
+    std::env::var_os(name).filter(|value| !value.is_empty()).map(|value| {
+        value.to_str().map(str::to_string).unwrap_or_default()
+    })
+}
+
+/// Reads every variable in `names`. Fails listing exactly which ones are
+/// missing — names only, never values.
+fn require_env(names: &[&str]) -> Result<Vec<String>, String> {
+    let missing: Vec<&str> =
+        names.iter().copied().filter(|name| env_value(name).is_none()).collect();
+    if !missing.is_empty() {
+        return Err(format!(
+            "missing environment variables: {}\n\
+             set them in the environment and retry (values are read from the \
+             environment only and are never logged)",
+            missing.join(", ")
+        ));
+    }
+    Ok(names.iter().map(|name| env_value(name).unwrap_or_default()).collect())
 }
 
 /// Where the FoxShot project publishes its update manifest.

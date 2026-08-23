@@ -14,9 +14,13 @@ workspace = true
 # Dependencies are added only when actually needed:
 #   serde + serde_json — update-manifest parsing (S8); also the future home of
 #                        settings + library persistence
+#   sha2 + hmac       — AWS SigV4 request signing for uploads (S6); pure
+#                        computation, Core still performs no I/O
 # Still deliberately avoided here:
 #   wgpu       — the render layer (lives in the UI crate, never in Core)
 #   thiserror  — only if Error grows past hand-writing
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+sha2 = "0.10"
+hmac = "0.12"

@@ -5,7 +5,7 @@
 //! and exposes them through a single [`Platform`] value; nothing in Core
 //! ever asks which OS it is running on.
 
-use crate::error::Result;
+use crate::error::{Error, Result};
 use crate::frame::Frame;
 use crate::geometry::{Rect, Scale};
 use std::path::PathBuf;
@@ -140,6 +140,22 @@ pub trait Fetch {
     /// Performs a PUT with a content type and returns the response body as
     /// text (typically a URL pointing at the uploaded resource).
     fn put(&self, url: &str, body: &[u8], content_type: &str) -> Result<String>;
+    /// Performs a PUT with extra request headers — needed for signed
+    /// uploads (SigV4 sends `authorization`, `x-amz-date` and
+    /// `x-amz-content-sha256` as headers).
+    ///
+    /// The default fails with [`Error::Unsupported`]; adapters that can send
+    /// custom headers override it.
+    fn put_with_headers(
+        &self,
+        url: &str,
+        body: &[u8],
+        content_type: &str,
+        headers: &[(String, String)],
+    ) -> Result<String> {
+        let _ = (url, body, content_type, headers);
+        Err(Error::Unsupported { what: "PUT with custom headers".to_string() })
+    }
 }
 
 /// Describes native window chrome so the UI can imitate it.

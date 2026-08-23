@@ -203,6 +203,19 @@ impl Fetch for NullPlatform {
         let _ = (url, body, content_type);
         Ok(Self::PUT_RESPONSE.to_string())
     }
+
+    /// Signed PUTs answer exactly like plain ones — the null platform
+    /// records nothing it cannot verify.
+    fn put_with_headers(
+        &self,
+        url: &str,
+        body: &[u8],
+        content_type: &str,
+        headers: &[(String, String)],
+    ) -> Result<String> {
+        let _ = headers;
+        self.put(url, body, content_type)
+    }
 }
 
 impl ChromeStyle for NullPlatform {

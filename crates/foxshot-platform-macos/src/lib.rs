@@ -441,14 +441,25 @@ impl Fetch for MacosPlatform {
     /// HTTP PUT with the given content type; on 2xx returns the final URL
     /// after redirects. Same error mapping as [`Fetch::get`].
     fn put(&self, url: &str, body: &[u8], content_type: &str) -> Result<String> {
-        let response = self
-            .agent
-            .put(url)
-            .header("Content-Type", content_type)
-            .send(body)
-            .map_err(|error| Error::Transport {
-                message: format!("PUT to {} failed: {error}", host_of(url)),
-            })?;
+        self.put_with_headers(url, body, content_type, &[])
+    }
+
+    /// HTTP PUT with extra request headers (SigV4 signed uploads). Same
+    /// error mapping as [`Fetch::get`].
+    fn put_with_headers(
+        &self,
+        url: &str,
+        body: &[u8],
+        content_type: &str,
+        headers: &[(String, String)],
+    ) -> Result<String> {
+        let mut request = self.agent.put(url).header("Content-Type", content_type);
+        for (name, value) in headers {
+            request = request.header(name, value);
+        }
+        let response = request.send(body).map_err(|error| Error::Transport {
+            message: format!("PUT to {} failed: {error}", host_of(url)),
+        })?;
         let status = response.status();
         if !status.is_success() {
             return Err(Error::Transport {
