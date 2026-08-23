@@ -10,7 +10,8 @@
 //! with a message naming the slice that adds them.
 
 use foxshot_core::{Credentials, Frame, FreeHostTarget, ModuleRegistry, Platform, Rect, S3Target,
-    UpdateChecker, UpdateManifest, UpdateReport, UpdateStatus, UploadTarget};
+    Scale, Size, UpdateChecker, UpdateManifest, UpdateReport, UpdateStatus, UploadTarget};
+use foxshot_ui::EditorOutcome;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
@@ -33,6 +34,7 @@ fn run(args: &[String]) -> Result<(), String> {
         }
         Some("displays") => cmd_displays(),
         Some("capture") => cmd_capture(&args[1..]),
+        Some("edit") => cmd_edit(&args[1..]),
         Some("upload") => cmd_upload(&args[1..]),
         Some("update") => cmd_update(&args[1..]),
         Some("daemon") => cmd_daemon(&args[1..]),
@@ -55,7 +57,8 @@ fn print_usage() {
          \x20 foxshot capture --full -o <path> [--upload [--target r2|s3|free]]\n\
          \x20 foxshot capture --display <id> -o <path>\n\
          \x20 foxshot capture --region <x>,<y>,<w>,<h> -o <path>\n\
-         \x20 foxshot capture --region-select -o <path>\n\
+         \x20 foxshot capture --region-select -o <path> [--edit]\n\
+         \x20 foxshot edit <file> [-o <path>]\n\
          \x20 foxshot upload <file> [--target r2|s3|free]\n\
          \x20 foxshot daemon [--full-key <accel>] [--region-key <accel>] [--upload]\n\
          \x20 foxshot displays\n\
@@ -125,6 +128,7 @@ fn cmd_capture(args: &[String]) -> Result<(), String> {
     let mut mode: Option<CaptureMode> = None;
     let mut output: Option<PathBuf> = None;
     let mut upload = false;
+    let mut edit = false;
     let mut target_name = "r2".to_string();
     let mut iter = args.iter();
     while let Some(arg) = iter.next() {
@@ -145,6 +149,7 @@ fn cmd_capture(args: &[String]) -> Result<(), String> {
                 set_mode(&mut mode, CaptureMode::Region(parse_region(value)?))?;
             }
             "--region-select" => set_mode(&mut mode, CaptureMode::RegionSelect)?,
+            "--edit" => edit = true,
             "-o" | "--output" => output = Some(PathBuf::from(next("-o")?)),
             "--upload" => upload = true,
             "--target" => target_name = next("--target")?.clone(),
@@ -185,6 +190,20 @@ fn cmd_capture(args: &[String]) -> Result<(), String> {
             }
         }
     };
+    let frame = match edit {
+        true => match run_editor(frame)? {
+            EditorOutcome::Saved(flattened) => flattened,
+            EditorOutcome::Copied(flattened) => {
+                copy_to_clipboard(platform.as_ref(), &flattened)?;
+                return Ok(());
+            }
+            EditorOutcome::Cancelled => {
+                println!("cancelled");
+                return Ok(());
+            }
+        },
+        false => frame,
+    };
     if let Some(path) = &output {
         write_png(path, &frame)?;
         println!(
@@ -205,9 +224,92 @@ fn cmd_capture(args: &[String]) -> Result<(), String> {
     Ok(())
 }
 
+/// `edit <file> [-o <path>]`: opens the annotation editor over a PNG.
+/// Saving writes the flattened image to `-o` (default: the input file);
+/// copying sends it to the clipboard instead of writing anything.
+fn cmd_edit(args: &[String]) -> Result<(), String> {
+    let mut file: Option<PathBuf> = None;
+    let mut output: Option<PathBuf> = None;
+    let mut iter = args.iter();
+    while let Some(arg) = iter.next() {
+        match arg.as_str() {
+            "-o" | "--output" => {
+                output = Some(PathBuf::from(
+                    iter.next().ok_or("-o needs a value")?,
+                ));
+            }
+            other if other.starts_with('-') => {
+                return Err(format!("unknown edit option '{other}'"));
+            }
+            other => {
+                if file.is_some() {
+                    return Err(format!("unexpected extra argument '{other}'"));
+                }
+                file = Some(PathBuf::from(other));
+            }
+        }
+    }
+    let file = file.ok_or("edit needs a file: foxshot edit <file> [-o <path>]")?;
+    let frame = read_png(&file)?;
+    match run_editor(frame)? {
+        EditorOutcome::Saved(flattened) => {
+            let path = output.unwrap_or(file);
+            write_png(&path, &flattened)?;
+            println!(
+                "saved {w}x{h} -> {path}",
+                w = flattened.size().width,
+                h = flattened.size().height,
+                path = path.display()
+            );
+        }
+        EditorOutcome::Copied(flattened) => {
+            let platform = connect()?;
+            copy_to_clipboard(platform.as_ref(), &flattened)?;
+            println!("copied to the clipboard");
+        }
+        EditorOutcome::Cancelled => println!("cancelled"),
+    }
+    Ok(())
+}
+
+/// Runs the editor modally over `frame`.
+fn run_editor(frame: Frame) -> Result<EditorOutcome, String> {
+    foxshot_ui::Editor::run(frame).map_err(|e| e.to_string())
+}
+
+/// Puts `frame` on the system clipboard through the platform adapter.
+fn copy_to_clipboard(platform: &dyn Platform, frame: &Frame) -> Result<(), String> {
+    platform.clipboard().set_image(frame).map_err(|e| e.to_string())
+}
+
+/// Reads a PNG file into a frame (expanded to 8-bit RGBA, scale 1).
+fn read_png(path: &Path) -> Result<Frame, String> {
+    let bytes =
+        std::fs::read(path).map_err(|e| format!("cannot read {}: {e}", path.display()))?;
+    let mut decoder = png::Decoder::new(bytes.as_slice());
+    decoder.set_transformations(png::Transformations::EXPAND);
+    let mut reader = decoder.read_info().map_err(|e| format!("png decoder: {e}"))?;
+    let mut buf = vec![0; reader.output_buffer_size()];
+    let info = reader.next_frame(&mut buf).map_err(|e| format!("png decoder: {e}"))?;
+    buf.truncate(info.buffer_size());
+    let size = Size { width: info.width, height: info.height };
+    let pixels = match info.color_type {
+        png::ColorType::Rgba => buf,
+        png::ColorType::Rgb => {
+            let mut rgba = Vec::with_capacity(size.width as usize * size.height as usize * 4);
+            for rgb in buf.chunks_exact(3) {
+                rgba.extend_from_slice(rgb);
+                rgba.push(255);
+            }
+            rgba
+        }
+        other => return Err(format!("unsupported png colour type {other:?} (need rgb or rgba)")),
+    };
+    Frame::from_rgba8(size, Scale::new(1.0), pixels).map_err(|e| e.to_string())
+}
+
 /// Object key for a capture without `-o`: `capture-<unix-seconds>.png`.
-fn capture_key() -> String {
-    let secs = std::time::SystemTime::now()
+fn capture_key() -> String {    let secs = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|since| since.as_secs())
         .unwrap_or(0);

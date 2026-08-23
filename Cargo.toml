@@ -5,6 +5,7 @@ members = [
     "crates/foxshot-platform-macos",
     "crates/foxshot-platform-linux",
     "crates/foxshot-platform-windows",
+    "crates/foxshot-ui",
     "crates/foxshot-app",
 ]
 
