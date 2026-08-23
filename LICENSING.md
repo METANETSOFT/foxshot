@@ -1,52 +1,37 @@
-# Lisans — ne yapılabilir, ne yapılamaz
+# License — what you may and may not do
 
-FoxShot **PolyForm Noncommercial License 1.0.0** ile dağıtılır. Tam metin
-[`LICENSE.md`](LICENSE.md) dosyasında.
+FoxShot is distributed under the **PolyForm Noncommercial License 1.0.0**. The full text is in [`LICENSE.md`](LICENSE.md).
 
-## Serbest olan
+## What you may do
 
-- Kaynağı okumak, derlemek, kullanmak
-- Değiştirmek, fork'lamak, kendi sürümünü yapmak
-- **Kopyalarını dağıtmak ve paylaşmak** — değiştirdiğin hâliyle bile
-- Kişisel kullanım, hobi, öğrenme, araştırma, deneme
-- Okul, üniversite, kamu araştırma kurumu, vakıf/dernek, kamu sağlık veya güvenlik
-  kurumu, çevre kuruluşu ve devlet kurumları tarafından kullanım
+- Read the source, build it, and use it
+- Modify it, fork it, make your own version
+- **Distribute and share copies** — including modified ones
+- Personal use: hobby, learning, research, experimentation
+- Use by schools, universities, public research bodies, charities and associations, public health or safety organisations, environmental organisations, and government institutions
 
-Dağıtırken bu lisans metnini ve `Required Notice:` satırını kopyayla birlikte
-vermen gerekir. Başka bir şart yok.
+When you redistribute, you must pass along the license text and the `Required Notice:` line that ships with the software. There is no other condition.
 
-## Serbest olmayan
+## What you may not do
 
-**Her türlü ticari kullanım.** Bunu satmak, ücretli bir ürünün parçası yapmak,
-ücretli bir hizmet olarak sunmak, ya da ticari bir işletmenin işi için kullanmak
-Metanetsoft'un ayrı yazılı izni olmadan mümkün değil.
+**Any commercial use.** Selling it, making it part of a paid product, offering it as a paid service, or using it for the business of a commercial enterprise all require separate written permission from Metanetsoft.
 
-Ticari kullanım hakkı yalnızca **Metanetsoft**'a aittir. Ticari bir kullanım
-ihtiyacın varsa lisans için bize yaz.
+Commercial rights belong to Metanetsoft alone. If you need a commercial license, ask us.
 
-## Bu neden GPL değil
+## Why not GPL
 
-GPL-3.0 herkese satma hakkı verir — bir başkasının FoxShot'ı alıp ticarileştirmesini
-engellemez. İstenen şey bu olmadığı için GPL uygun değil. PolyForm Noncommercial,
-paylaşmayı tamamen serbest bırakıp ticari hakkı sahibinde tutan, hazır ve yaygın
-kullanılan bir source-available lisans.
+GPL-3.0 grants everyone the right to sell. It would not stop someone taking FoxShot and commercialising it — and that is precisely the thing being prevented here, so GPL does not fit.
 
-FoxShot sıfırdan Rust ile yazılıyor; ShareX'in GPL-3.0 kodundan türetilmiş bir satır
-içermiyor. Bu, GPL dışında bir lisans seçmenin ön koşulu.
+PolyForm Noncommercial leaves sharing completely free while keeping commercial rights with the owner.
 
-## Değerlendirilmesi gereken alternatif
+FoxShot is written from scratch in Rust and contains no line derived from ShareX's GPL-3.0 code. That is the precondition for choosing a non-GPL license at all.
 
-Noncommercial, ticari kullanımın **tamamını** kapatır: bir şirkette çalışan bir
-geliştirici, işi için ekran görüntüsü alırken FoxShot kullanırsa bu lisansı ihlal eder.
-FoxShot'ın hedef kitlesi büyük ölçüde tam olarak bu insanlar.
+## An alternative worth weighing
 
-Amaç "kimse ürünümüzü alıp ticarileştirmesin" ise, bunu tam olarak karşılayan lisans
-**PolyForm Shield 1.0.0**'dır: her amaç serbesttir, **rekabet eden bir ürün sunmak
-hariç**. Şirket içi kullanıma izin verir, paylaşmaya izin verir, FoxShot'ın rakibini
-yapmayı yasaklar.
+Noncommercial closes commercial use entirely. That includes a developer at a company using FoxShot to take screenshots for work — and that is a large part of FoxShot's intended audience.
 
-Metni hazır: [`licenses/PolyForm-Shield-1.0.0.md`](licenses/PolyForm-Shield-1.0.0.md).
-Geçiş tek dosya değişimi — `LICENSE.md`'yi bununla değiştirip başlığa
-`Licensor Line of Business: FoxShot ekran yakalama uygulaması` satırını eklemek yeterli.
+If the goal is only *"nobody takes our product and commercialises it"*, the license that matches exactly is **PolyForm Shield 1.0.0**: every purpose is permitted except providing a product that competes with this one. It allows internal use inside a company, it allows sharing, and it forbids building a rival.
 
-Karar senin; şu an yürürlükte olan Noncommercial.
+The text is ready at [`licenses/PolyForm-Shield-1.0.0.md`](licenses/PolyForm-Shield-1.0.0.md). Switching is a single file swap plus adding a `Licensor Line of Business:` line.
+
+The decision belongs to the owner. Noncommercial is what is in force today.

@@ -1,38 +1,74 @@
 # FoxShot
 
-Ekran yakalama, işaretleme ve paylaşma aracı. macOS, Linux ve Windows için, Rust ile yazılıyor.
+A screen capture, annotation and sharing tool for macOS, Linux and Windows, written in Rust.
 
-> **Durum: pre-alpha.** Henüz çalışan bir binary yok. Bu depoda şu anda mimari, tasarım ve Core iskeleti var. Yol haritası `docs/diagrams/04-insa-adimlari.drawio` dosyasında.
+> **Pre-alpha.** Screen capture works on Linux today and the update check is live. Everything else is in progress. The build order is in `docs/diagrams`.
 
-## Ne yapacak
+## What works today
 
-- Bölge, pencere, tam ekran ve kaydırmalı çekim
-- Ekran kaydı ve GIF
-- Çekimin üstünde 17 işaret tipiyle düzenleme — alttaki görüntüye asla dokunmadan
-- Cloudflare R2, Amazon S3 ve ücretsiz servislere yükleme, linki panoya
-- OCR, QR ve renk seçici gibi araçlar
+- Capture the full screen, a single display, or a pixel region on Linux via X11 — XShm where the extension is present, `GetImage` as the fallback
+- List displays with their geometry, scale and which one is primary
+- PNG output
+- Check for component updates against the published manifest over a real HTTPS request
 
-## Mimari
+```
+foxshot displays
+foxshot capture --full -o shot.png
+foxshot capture --display 0 -o shot.png
+foxshot capture --region 100,100,800,600 -o shot.png
+foxshot update --check
+```
 
-Tek Core, üç platform adaptörü. Core tüm davranışı sahiplenir ve içinde tek bir `cfg(target_os)` dalı bulunmaz; platforma özgü her şey `core::platform` trait'lerinin arkasındadır. Core'da yapılan bir değişiklik üç platforma birden ulaşır.
+## What it will do
 
-Core, her adaptör ve her özellik modülü kendi sürümünü taşır ve ayrı güncellenir. Açılışta `updates.json` okunur, yeni sürüm varsa bildirilir.
+- Region, window, full-screen and scrolling capture
+- Screen recording and GIF
+- Annotation with 17 mark types layered over the capture, never touching the pixels underneath
+- Upload to Cloudflare R2, Amazon S3 and free hosts, with the link placed on the clipboard
+- OCR, QR and a colour picker
 
-Diyagramlar `docs/diagrams/` altında:
+## Architecture
 
-- `01a-crate-grafi` — crate bağımlılık grafiği
-- `01b-core-siniflari` — Core'un iç sınıf haritası
-- `02-yakalama-akisi` — kısayoldan linke kadar akış
-- `03-modul-guncelleme` — modül kayıt defteri ve güncelleme kontrolü
-- `04-insa-adimlari` — inşa sırası, S0'dan S10'a
+One Core, three platform adapters.
 
-## Belgeler
+Core owns all behaviour and contains no `cfg(target_os)` in its code; everything platform-specific sits behind a trait in `core::platform`. A change in Core reaches all three platforms at once. Core performs no I/O at all — even HTTP goes out through the adapter's `Fetch` trait, which is why `UpdateChecker::compare` is a pure function over a manifest string.
 
-- `PRODUCT.md` — ürün gerçeği, kullanıcılar, kapsam
-- `DESIGN.md` — görsel sistem
-- `design/foxshot.html` — tıklanabilir tasarım prototipi, 157 senaryo
-- `FACTORY.md` — nasıl çalışıyoruz
+Core, each adapter and each feature module carry their own version and update independently. At startup `updates.json` is read and anything newer is reported. A manifest entry with a null download is reportable but not installable, which is a real state rather than a missing value.
 
-## Lisans
+## Repository layout
 
-PolyForm Noncommercial 1.0.0, tam metin `LICENSE.md` içinde. Okuyabilir, değiştirebilir ve **paylaşabilirsin**; ticari kullanım hakkı Metanetsoft'a aittir. Sade dille açıklaması `LICENSING.md` dosyasında.
+```
+crates/foxshot-core              Core: capture pipeline, annotation model,
+                                 module registry, update checker, platform traits
+crates/foxshot-platform-linux    X11 adapter: RandR, XShm, real HTTP
+crates/foxshot-platform-macos    CoreGraphics adapter, not yet run on hardware
+crates/foxshot-platform-windows  placeholder until its slice
+crates/foxshot-app               the foxshot command line binary
+docs/diagrams                    architecture, flows and the build order
+design/foxshot.html              clickable design prototype, 157 scenarios
+updates.json                     the published version manifest
+```
+
+## Build
+
+```
+cargo build --workspace
+cargo test --workspace
+```
+
+The Linux adapter needs an X server. Capture can be verified headlessly:
+
+```
+xvfb-run -a --server-args="-screen 0 800x600x24" ./target/debug/foxshot capture --full -o shot.png
+```
+
+## Documents
+
+- `PRODUCT.md` — product truth, users, scope
+- `DESIGN.md` — the visual system
+- `design/foxshot.html` — clickable design prototype, 157 scenarios
+- `FACTORY.md` — how the work is run
+
+## License
+
+PolyForm Noncommercial 1.0.0, full text in `LICENSE.md`. You may read, modify and share it; commercial rights are reserved to Metanetsoft. Plain-language summary in `LICENSING.md`.
