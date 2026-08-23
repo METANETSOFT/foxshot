@@ -3,10 +3,10 @@
 //! Implements the full [`foxshot_core::platform`] trait set against a real X
 //! server: display enumeration through RandR (with a root-window fallback),
 //! pixel capture through MIT-SHM shared memory when the server offers it and
-//! `GetImage` otherwise, and HTTP fetch over rustls (ureq). Hotkeys,
-//! clipboard, and notifications are not implemented yet and report
-//! [`Error::Unsupported`] naming the slice that adds them — that is honest
-//! behaviour, not a placeholder.
+//! `GetImage` otherwise, HTTP fetch over rustls (ureq), clipboard writes as
+//! X11 selection ownership served from a background thread, notifications
+//! over the DBus session bus, and global hotkeys through `XGrabKey` on the
+//! root window.
 
 use foxshot_core::error::{Error, Result};
 use foxshot_core::frame::{Frame, BYTES_PER_PIXEL};
@@ -16,12 +16,18 @@ use foxshot_core::platform::{
     NotificationService, Paths, Permission, PermissionService, PermissionState, Platform,
     ScreenCapture, ScreenService, WindowChrome,
 };
+use std::collections::HashMap;
 use std::path::PathBuf;
+use std::sync::Mutex;
 use std::time::Duration;
 use ureq::ResponseExt as _;
 use x11rb::connection::{Connection, RequestConnection};
 use x11rb::protocol::{randr, shm, xproto};
 use x11rb::rust_connection::RustConnection;
+
+mod clipboard;
+mod hotkeys;
+mod notify;
 
 /// Largest response body fetch will read — a guard against unbounded
 /// downloads. Update manifests are a few kilobytes; 8 MiB is generous.
@@ -35,6 +41,8 @@ pub struct LinuxPlatform {
     shm: bool,
     /// HTTP agent for [`Fetch`]: rustls, 10s global timeout, ≤5 redirects.
     agent: ureq::Agent,
+    /// Registered hotkeys: id → what was grabbed on the root window.
+    hotkey_grabs: Mutex<HashMap<String, hotkeys::Grab>>,
 }
 
 impl std::fmt::Debug for LinuxPlatform {
@@ -49,11 +57,6 @@ impl std::fmt::Debug for LinuxPlatform {
 /// Maps any displayable transport failure into Core's error vocabulary.
 fn transport(error: impl std::fmt::Display) -> Error {
     Error::Transport { message: error.to_string() }
-}
-
-/// Builds the "not implemented yet" error for capabilities of later slices.
-fn unsupported(capability: &str, slice: &str) -> Error {
-    Error::Unsupported { what: format!("{capability} (lands in slice {slice})") }
 }
 
 impl LinuxPlatform {
@@ -77,7 +80,19 @@ impl LinuxPlatform {
                 .http_status_as_error(false)
                 .build(),
         );
-        Ok(Self { conn, screen_num, shm, agent })
+        Ok(Self { conn, screen_num, shm, agent, hotkey_grabs: Mutex::new(HashMap::new()) })
+    }
+
+    /// Waits up to `timeout` for a registered hotkey to fire and returns its
+    /// id. Not part of the Core [`HotkeyService`] trait — the trait only
+    /// registers bindings; waiting on them is an adapter-level capability.
+    pub fn poll_hotkey(&self, timeout: Duration) -> Result<Option<String>> {
+        let registrations = self
+            .hotkey_grabs
+            .lock()
+            .map_err(|_| Error::Transport { message: "hotkey registry poisoned".to_string() })?
+            .clone();
+        hotkeys::poll(&self.conn, &registrations, timeout)
     }
 
     /// The root window of the screen this connection drives.
@@ -420,32 +435,61 @@ impl PermissionService for LinuxPlatform {
 }
 
 impl HotkeyService for LinuxPlatform {
-    fn register(&self, _id: &str, _accelerator: &str) -> Result<()> {
-        Err(unsupported("global hotkeys", "S7"))
+    /// Grabs the accelerator on the root window with every Lock/Mod2
+    /// variant. Re-registering an existing id re-binds it to the new
+    /// accelerator.
+    fn register(&self, id: &str, accelerator: &str) -> Result<()> {
+        let grab = hotkeys::register(&self.conn, self.screen_num, id, accelerator)?;
+        let mut grabs = self
+            .hotkey_grabs
+            .lock()
+            .map_err(|_| Error::Transport { message: "hotkey registry poisoned".to_string() })?;
+        if let Some(previous) = grabs.insert(id.to_string(), grab) {
+            // The old binding must not survive the new one.
+            let _ = hotkeys::unregister(&self.conn, self.screen_num, previous);
+        }
+        Ok(())
     }
 
-    fn unregister(&self, _id: &str) -> Result<()> {
-        Err(unsupported("global hotkeys", "S7"))
+    fn unregister(&self, id: &str) -> Result<()> {
+        let grab = self
+            .hotkey_grabs
+            .lock()
+            .map_err(|_| Error::Transport { message: "hotkey registry poisoned".to_string() })?
+            .remove(id)
+            .ok_or_else(|| Error::Transport {
+                message: format!("no hotkey registered as '{id}'"),
+            })?;
+        hotkeys::unregister(&self.conn, self.screen_num, grab)
     }
 
+    /// XGrabKey bindings are passive grabs on the root window: they fire no
+    /// matter which application has focus.
     fn is_global(&self) -> bool {
-        false
+        true
     }
 }
 
 impl ClipboardService for LinuxPlatform {
-    fn set_image(&self, _frame: &Frame) -> Result<()> {
-        Err(unsupported("clipboard", "S7"))
+    /// Encodes the frame as PNG and serves it as `image/png` from a
+    /// background thread that owns the CLIPBOARD selection.
+    fn set_image(&self, frame: &Frame) -> Result<()> {
+        clipboard::set_payload(clipboard::Payload::Png(clipboard::encode_png(frame)?))
     }
 
-    fn set_text(&self, _text: &str) -> Result<()> {
-        Err(unsupported("clipboard", "S7"))
+    /// Serves the text as UTF8_STRING/STRING from a background thread that
+    /// owns the CLIPBOARD selection.
+    fn set_text(&self, text: &str) -> Result<()> {
+        clipboard::set_payload(clipboard::Payload::Text(text.as_bytes().to_vec()))
     }
 }
 
 impl NotificationService for LinuxPlatform {
-    fn notify(&self, _title: &str, _body: &str) -> Result<()> {
-        Err(unsupported("notifications", "S7"))
+    /// `org.freedesktop.Notifications.Notify` over the DBus session bus;
+    /// returns the id the notification daemon assigned. Without a session
+    /// bus this is [`Error::Unsupported`] naming the absent bus.
+    fn notify(&self, title: &str, body: &str) -> Result<u32> {
+        notify::notify(title, body)
     }
 }
 

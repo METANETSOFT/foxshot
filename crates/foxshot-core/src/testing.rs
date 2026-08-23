@@ -185,11 +185,11 @@ impl ClipboardService for NullPlatform {
 }
 
 impl NotificationService for NullPlatform {
-    fn notify(&self, title: &str, body: &str) -> Result<()> {
+    fn notify(&self, title: &str, body: &str) -> Result<u32> {
         self.notifications
             .borrow_mut()
             .push((title.to_string(), body.to_string()));
-        Ok(())
+        Ok(0)
     }
 }
 

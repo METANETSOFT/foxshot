@@ -392,7 +392,7 @@ impl ClipboardService for MacosPlatform {
 }
 
 impl NotificationService for MacosPlatform {
-    fn notify(&self, _title: &str, _body: &str) -> Result<()> {
+    fn notify(&self, _title: &str, _body: &str) -> Result<u32> {
         Err(unsupported("notifications", "S7"))
     }
 }

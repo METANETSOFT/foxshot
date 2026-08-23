@@ -35,6 +35,7 @@ fn run(args: &[String]) -> Result<(), String> {
         Some("capture") => cmd_capture(&args[1..]),
         Some("upload") => cmd_upload(&args[1..]),
         Some("update") => cmd_update(&args[1..]),
+        Some("daemon") => cmd_daemon(&args[1..]),
         Some("--help") | Some("-h") => {
             print_usage();
             Ok(())
@@ -55,6 +56,7 @@ fn print_usage() {
          \x20 foxshot capture --display <id> -o <path>\n\
          \x20 foxshot capture --region <x>,<y>,<w>,<h> -o <path>\n\
          \x20 foxshot upload <file> [--target r2|s3|free]\n\
+         \x20 foxshot daemon [--full-key <accel>] [--region-key <accel>] [--upload]\n\
          \x20 foxshot displays\n\
          \x20 foxshot update --check\n\
          \x20 foxshot --version\n\
@@ -175,7 +177,8 @@ fn cmd_capture(args: &[String]) -> Result<(), String> {
             .as_ref()
             .and_then(|path| path.file_name().map(|name| name.to_string_lossy().into_owned()))
             .unwrap_or_else(capture_key);
-        upload_bytes(platform.as_ref(), encode_png(&frame)?, &key, &target_name)?;
+        let url = upload_bytes(platform.as_ref(), encode_png(&frame)?, &key, &target_name)?;
+        println!("uploaded {key} -> {url}");
     }
     Ok(())
 }
@@ -230,18 +233,16 @@ fn write_png(path: &Path, frame: &Frame) -> Result<(), String> {
 }
 
 /// Uploads `bytes` under `key` to the named target, after validating the
-/// target through the platform's `Fetch`. Prints the resulting URL.
+/// target through the platform's `Fetch`. Returns the resulting URL.
 fn upload_bytes(
     platform: &dyn Platform,
     bytes: Vec<u8>,
     key: &str,
     target_name: &str,
-) -> Result<(), String> {
+) -> Result<String, String> {
     let target = build_target(target_name)?;
     target.validate(platform.fetch()).map_err(|e| e.to_string())?;
-    let url = target.upload(platform.fetch(), &bytes, key).map_err(|e| e.to_string())?;
-    println!("uploaded {key} -> {url}");
-    Ok(())
+    target.upload(platform.fetch(), &bytes, key).map_err(|e| e.to_string())
 }
 
 fn cmd_upload(args: &[String]) -> Result<(), String> {
@@ -275,7 +276,119 @@ fn cmd_upload(args: &[String]) -> Result<(), String> {
         .file_name()
         .map(|name| name.to_string_lossy().into_owned())
         .ok_or_else(|| format!("cannot derive an object key from {}", file.display()))?;
-    upload_bytes(platform.as_ref(), bytes, &key, &target_name)
+    let url = upload_bytes(platform.as_ref(), bytes, &key, &target_name)?;
+    println!("uploaded {key} -> {url}");
+    Ok(())
+}
+
+/// Default accelerator for a full-desktop capture (macOS's Cmd+Shift+3,
+/// with Ctrl because X11 desktops reserve Super for the window manager).
+const DEFAULT_FULL_KEY: &str = "Ctrl+Shift+3";
+/// Default accelerator for a region capture.
+const DEFAULT_REGION_KEY: &str = "Ctrl+Shift+4";
+
+/// Linux daemon: binds the capture keys globally, then serves captures in a
+/// loop. Each fire captures, saves a PNG under the captures dir, copies it
+/// to the clipboard, posts a notification, and (with `--upload`) uploads.
+/// The region key captures the full desktop for now — interactive region
+/// selection lands with the GUI overlay slice — and the daemon says so.
+#[cfg(target_os = "linux")]
+fn cmd_daemon(args: &[String]) -> Result<(), String> {
+    let mut full_key = DEFAULT_FULL_KEY.to_string();
+    let mut region_key = DEFAULT_REGION_KEY.to_string();
+    let mut upload = false;
+    let mut iter = args.iter();
+    while let Some(arg) = iter.next() {
+        let mut next = |flag: &str| -> Result<&String, String> {
+            iter.next().ok_or_else(|| format!("{flag} needs a value"))
+        };
+        match arg.as_str() {
+            "--full-key" => full_key = next("--full-key")?.clone(),
+            "--region-key" => region_key = next("--region-key")?.clone(),
+            "--upload" => upload = true,
+            other => return Err(format!("unknown daemon option '{other}'")),
+        }
+    }
+
+    let platform =
+        foxshot_platform_linux::LinuxPlatform::connect().map_err(|e| e.to_string())?;
+    use foxshot_core::platform::{HotkeyService, Paths};
+    HotkeyService::register(&platform, "full", &full_key).map_err(|e| e.to_string())?;
+    HotkeyService::register(&platform, "region", &region_key).map_err(|e| e.to_string())?;
+    println!(
+        "foxshot daemon: '{full_key}' captures the desktop, '{region_key}' too \
+         (interactive region selection lands with the GUI slice); \
+         clipboard + notifications on, upload {}",
+        if upload { "on" } else { "off" }
+    );
+    let dir = Paths::captures_dir(&platform);
+    std::fs::create_dir_all(&dir)
+        .map_err(|e| format!("cannot create {}: {e}", dir.display()))?;
+    loop {
+        match platform.poll_hotkey(std::time::Duration::from_secs(3600)) {
+            Ok(Some(id)) => daemon_capture(&platform, &dir, &id, upload),
+            Ok(None) => {}
+            Err(error) => eprintln!("foxshot daemon: hotkey poll failed: {error}"),
+        }
+    }
+}
+
+/// One daemon capture: grab the desktop, save, copy, notify, maybe upload.
+/// Failures are printed, not fatal — the daemon keeps serving the keys.
+#[cfg(target_os = "linux")]
+fn daemon_capture(
+    platform: &foxshot_platform_linux::LinuxPlatform,
+    dir: &Path,
+    id: &str,
+    upload: bool,
+) {
+    use foxshot_core::platform::{ClipboardService, NotificationService, ScreenCapture};
+    let result = (|| -> Result<(), String> {
+        let frame = ScreenCapture::grab(platform, full_bounds(platform)?)
+            .map_err(|e| e.to_string())?;
+        let path = dir.join(capture_key());
+        write_png(&path, &frame)?;
+        println!(
+            "captured {w}x{h} ({id}) -> {path}",
+            w = frame.size().width,
+            h = frame.size().height,
+            path = path.display()
+        );
+        ClipboardService::set_image(platform, &frame).map_err(|e| e.to_string())?;
+        if upload {
+            let key = path
+                .file_name()
+                .map(|name| name.to_string_lossy().into_owned())
+                .unwrap_or_else(capture_key);
+            let url = upload_bytes(platform, encode_png(&frame)?, &key, "r2")?;
+            println!("uploaded {key} -> {url}");
+        }
+        let body = match upload {
+            true => "Screenshot saved, copied to the clipboard and uploaded",
+            false => "Screenshot saved and copied to the clipboard",
+        };
+        match NotificationService::notify(platform, "FoxShot", body) {
+            Ok(nid) => println!("notified (id {nid}): {body}"),
+            Err(error) => eprintln!("foxshot daemon: notification failed: {error}"),
+        }
+        Ok(())
+    })();
+    if let Err(error) = result {
+        eprintln!("foxshot daemon: capture failed: {error}");
+    }
+}
+
+/// The whole desktop bounds, via the primary display.
+#[cfg(target_os = "linux")]
+fn full_bounds(platform: &foxshot_platform_linux::LinuxPlatform) -> Result<Rect, String> {
+    use foxshot_core::platform::ScreenService;
+    Ok(ScreenService::primary(platform).map_err(|e| e.to_string())?.bounds)
+}
+
+/// Other OSes have no global-hotkey adapter yet.
+#[cfg(not(target_os = "linux"))]
+fn cmd_daemon(_args: &[String]) -> Result<(), String> {
+    Err("daemon needs the Linux/X11 adapter (other platforms land in later slices)".to_string())
 }
 
 /// Default endpoint of the anonymous `--target free` host.

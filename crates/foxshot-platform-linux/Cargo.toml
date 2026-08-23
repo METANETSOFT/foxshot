@@ -13,6 +13,9 @@ workspace = true
 [dependencies]
 foxshot-core = { path = "../foxshot-core" }
 libc = "0.2"
+png = "0.17"
 x11rb = { version = "0.13", features = ["randr", "shm"] }
 # ureq 3.x is rustls-only (ring + webpki roots): no OpenSSL, no system TLS.
 ureq = { version = "3", default-features = false, features = ["rustls"] }
+# DBus client for desktop notifications; pure Rust, no libdbus.
+zbus = { version = "5", features = ["blocking"] }

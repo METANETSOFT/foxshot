@@ -129,8 +129,9 @@ pub trait ClipboardService {
 
 /// Posts user-facing notifications.
 pub trait NotificationService {
-    /// Shows a notification with a title and a body.
-    fn notify(&self, title: &str, body: &str) -> Result<()>;
+    /// Shows a notification with a title and a body and returns the id the
+    /// platform assigned to it, or 0 when the platform assigns no ids.
+    fn notify(&self, title: &str, body: &str) -> Result<u32>;
 }
 
 /// Minimal HTTP transport for update checks and uploads.
