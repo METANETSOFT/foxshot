@@ -1,0 +1,28 @@
+{
+  "direction": "TB",
+  "nodes": [
+    {"id": "s0", "label": "S0 — Workspace + Core iskeleti\nDONE: cargo check tüm crate'lerde 0 döner", "width": 460, "height": 60},
+    {"id": "s1", "label": "S1 — geometry, Frame, platform trait'leri + NullPlatform test impl\nDONE: cargo test -p foxshot-core yeşil", "width": 460, "height": 60},
+    {"id": "s2", "label": "S2 — İLK DİKEY DİLİM: Linux X11 tam ekran çekimi -> PNG (CLI, UI yok)\nDONE: foxshot capture --full -o out.png gerçek görüntü üretir", "width": 460, "height": 60},
+    {"id": "s3", "label": "S3 — macOS adaptörü: ScreenCaptureKit + TCC preflight\nDONE: aynı komut macOS'ta gerçek görüntü üretir, izin yoksa açıkça söyler", "width": 460, "height": 60},
+    {"id": "s4", "label": "S4 — wgpu borderless overlay + bölge sürükleme\nDONE: sürüklenen dikdörtgen piksel doğru PNG verir, karışık DPI'da da", "width": 460, "height": 60},
+    {"id": "s5", "label": "S5 — AnnotationDocument + 5 temel işaret (dikdörtgen, ok, metin, numara, blur)\nDONE: test Frame baytlarının değişmediğini kanıtlar (non-destructive)", "width": 460, "height": 60},
+    {"id": "s6", "label": "S6 — Yükleme: Cloudflare R2 target + doğrulama + link panoya\nDONE: gerçek bucket'a yükler, dönen URL açılır", "width": 460, "height": 60},
+    {"id": "s7", "label": "S7 — Kütüphane + menü çubuğu paneli (günlük yüzey)\nDONE: kısayoldan linke kadar fareye dokunmadan tamamlanır", "width": 460, "height": 60},
+    {"id": "s8", "label": "S8 — ModuleRegistry + updates.json kontrolü + bildirim\nDONE: manifest sürümü yükseltilince panelde bildirim çıkar", "width": 460, "height": 60},
+    {"id": "s9", "label": "S9 — Windows adaptörü\nDONE: aynı Core, üçüncü platformda çekim + yükleme çalışır", "width": 460, "height": 60},
+    {"id": "s10", "label": "S10 — Kalan 12 işaret, efektler, video ve OCR modülleri\nDONE: her modül ayrı sürümle kurulup kaldırılabilir", "width": 460, "height": 60}
+  ],
+  "edges": [
+    {"source": "s0", "target": "s1"},
+    {"source": "s1", "target": "s2"},
+    {"source": "s2", "target": "s3"},
+    {"source": "s3", "target": "s4"},
+    {"source": "s4", "target": "s5"},
+    {"source": "s5", "target": "s6"},
+    {"source": "s6", "target": "s7"},
+    {"source": "s7", "target": "s8"},
+    {"source": "s8", "target": "s9"},
+    {"source": "s9", "target": "s10"}
+  ]
+}

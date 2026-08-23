@@ -1,0 +1,18 @@
+[package]
+name = "foxshot-core"
+version = "0.1.0"
+description = "FoxShot Core — platform-agnostic behaviour: capture pipeline, annotation model, upload, library, module registry."
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+# Deliberately dependency-free for now. Planned, when each is actually needed:
+#   serde      — settings + library persistence
+#   wgpu       — the render layer (lives in the UI crate, never in Core)
+#   thiserror  — only if Error grows past hand-writing
+[dependencies]

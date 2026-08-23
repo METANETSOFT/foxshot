@@ -1,0 +1,25 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/foxshot-core",
+    "crates/foxshot-platform-macos",
+    "crates/foxshot-platform-linux",
+    "crates/foxshot-platform-windows",
+    "crates/foxshot-app",
+]
+
+# Every crate carries its OWN version on purpose: Core and each platform adapter
+# ship and update independently. Nothing here is allowed to unify them.
+[workspace.package]
+edition = "2024"
+license = "LicenseRef-PolyForm-Noncommercial-1.0.0"
+authors = ["Metanetsoft"]
+repository = "https://github.com/metanetsoft/foxshot"
+rust-version = "1.85"
+
+[workspace.lints.rust]
+missing_debug_implementations = "warn"
+unreachable_pub = "warn"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }

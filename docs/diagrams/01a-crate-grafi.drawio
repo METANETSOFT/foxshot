@@ -1,0 +1,109 @@
+<mxfile>
+  <diagram id="autolayout" name="Page-1">
+    <mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="app" value="foxshot-app (bin) v0.1.0" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="0" y="350" width="170" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="ui" value="foxshot-ui — wgpu + custom widgets v0.1.0" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="240" y="120" width="240" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="core" value="foxshot-core v0.1.0 — tüm davranış, sıfır platform kodu" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="550" y="230" width="260" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="pmac" value="platform-macos v0.1.0" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="280" y="430" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="plinux" value="platform-linux v0.1.0" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="280" y="510" width="160" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="pwin" value="platform-windows v0.1.0" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="280" y="350" width="170" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="meditor" value="module-editor v0.1.0" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="290" y="270" width="150" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="mupload" value="module-upload v0.1.0" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="290" y="0" width="150" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="mextra" value="module-video / ocr / qr (kurulu değil)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="260" y="190" width="210" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="osapi" value="OS API'leri" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="620" y="510" width="120" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="github" value="GitHub — updates.json" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="600" y="350" width="170" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="r2" value="Cloudflare R2 / S3 / ücretsiz servisler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="570" y="430" width="220" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="e0" value="sahiplenir" style="html=1;rounded=0;" edge="1" parent="1" source="app" target="ui">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="210" y="370"/><mxPoint x="250" y="370"/><mxPoint x="250" y="370"/><mxPoint x="250" y="370"/><mxPoint x="250" y="190"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e1" value="sahiplenir" style="html=1;rounded=0;" edge="1" parent="1" source="app" target="core">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="90" y="320"/><mxPoint x="90" y="260"/><mxPoint x="90" y="260"/><mxPoint x="90" y="260"/><mxPoint x="540" y="260"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e2" value="cfg(target_os)" style="html=1;rounded=0;" edge="1" parent="1" source="app" target="pmac">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="110" y="430"/><mxPoint x="110" y="460"/><mxPoint x="110" y="460"/><mxPoint x="110" y="460"/><mxPoint x="270" y="460"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e3" value="cfg(target_os)" style="html=1;rounded=0;" edge="1" parent="1" source="app" target="plinux">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="60" y="460"/><mxPoint x="60" y="540"/><mxPoint x="60" y="540"/><mxPoint x="60" y="540"/><mxPoint x="270" y="540"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e4" value="cfg(target_os)" style="html=1;rounded=0;" edge="1" parent="1" source="app" target="pwin">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="170" y="390"/><mxPoint x="270" y="390"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e5" value="yalnızca Core'u çağırır" style="html=1;rounded=0;" edge="1" parent="1" source="ui" target="core">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="470" y="200"/><mxPoint x="470" y="240"/><mxPoint x="470" y="240"/><mxPoint x="470" y="240"/><mxPoint x="540" y="240"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e6" value="core::platform trait'lerini uygular" style="html=1;rounded=0;" edge="1" parent="1" source="pmac" target="core">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="500" y="450"/><mxPoint x="560" y="450"/><mxPoint x="560" y="450"/><mxPoint x="560" y="450"/><mxPoint x="560" y="300"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e7" value="core::platform trait'lerini uygular" style="html=1;rounded=0;" edge="1" parent="1" source="plinux" target="core">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="500" y="540"/><mxPoint x="570" y="540"/><mxPoint x="570" y="540"/><mxPoint x="570" y="540"/><mxPoint x="570" y="300"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e8" value="core::platform trait'lerini uygular" style="html=1;rounded=0;" edge="1" parent="1" source="pwin" target="core">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="440" y="320"/><mxPoint x="440" y="290"/><mxPoint x="440" y="290"/><mxPoint x="440" y="290"/><mxPoint x="540" y="290"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e9" value="kaydolur" style="html=1;rounded=0;" edge="1" parent="1" source="meditor" target="core">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="440" y="280"/><mxPoint x="540" y="280"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e10" value="kaydolur" style="html=1;rounded=0;" edge="1" parent="1" source="mupload" target="core">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="530" y="30"/><mxPoint x="680" y="30"/><mxPoint x="680" y="30"/><mxPoint x="680" y="30"/><mxPoint x="680" y="220"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e11" value="kaydolur" style="html=1;rounded=0;" edge="1" parent="1" source="mextra" target="core">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="470" y="250"/><mxPoint x="540" y="250"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e12" value="ScreenCaptureKit, TCC, NSPasteboard" style="html=1;rounded=0;" edge="1" parent="1" source="pmac" target="osapi">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="460" y="480"/><mxPoint x="470" y="480"/><mxPoint x="470" y="480"/><mxPoint x="470" y="480"/><mxPoint x="470" y="520"/><mxPoint x="470" y="520"/><mxPoint x="470" y="520"/><mxPoint x="610" y="520"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e13" value="X11/XShm, xdg-portal, wl-clipboard" style="html=1;rounded=0;" edge="1" parent="1" source="plinux" target="osapi">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="440" y="560"/><mxPoint x="610" y="560"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e14" value="Graphics Capture, DXGI" style="html=1;rounded=0;" edge="1" parent="1" source="pwin" target="osapi">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="460" y="400"/><mxPoint x="480" y="400"/><mxPoint x="480" y="400"/><mxPoint x="480" y="400"/><mxPoint x="480" y="510"/><mxPoint x="480" y="510"/><mxPoint x="480" y="510"/><mxPoint x="610" y="510"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e15" value="Fetch impl: HTTPS GET" style="html=1;rounded=0;" edge="1" parent="1" source="pmac" target="github">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="460" y="440"/><mxPoint x="470" y="440"/><mxPoint x="470" y="440"/><mxPoint x="470" y="440"/><mxPoint x="470" y="380"/><mxPoint x="470" y="380"/><mxPoint x="470" y="380"/><mxPoint x="590" y="380"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e16" value="Fetch impl: HTTPS GET" style="html=1;rounded=0;" edge="1" parent="1" source="plinux" target="github">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="460" y="530"/><mxPoint x="480" y="530"/><mxPoint x="480" y="530"/><mxPoint x="480" y="530"/><mxPoint x="480" y="390"/><mxPoint x="480" y="390"/><mxPoint x="480" y="390"/><mxPoint x="590" y="390"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e17" value="Fetch impl: HTTPS GET" style="html=1;rounded=0;" edge="1" parent="1" source="pwin" target="github">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="450" y="360"/><mxPoint x="590" y="360"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e18" value="Fetch impl: yükleme aktarımı" style="html=1;rounded=0;" edge="1" parent="1" source="pmac" target="r2">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="440" y="460"/><mxPoint x="560" y="460"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e19" value="Fetch impl: yükleme aktarımı" style="html=1;rounded=0;" edge="1" parent="1" source="plinux" target="r2">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="510" y="550"/><mxPoint x="600" y="550"/><mxPoint x="600" y="550"/><mxPoint x="600" y="550"/><mxPoint x="600" y="500"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e20" value="Fetch impl: yükleme aktarımı" style="html=1;rounded=0;" edge="1" parent="1" source="pwin" target="r2">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="510" y="370"/><mxPoint x="590" y="370"/><mxPoint x="590" y="370"/><mxPoint x="590" y="370"/><mxPoint x="590" y="420"/></Array></mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

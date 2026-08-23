@@ -1,0 +1,73 @@
+<mxfile>
+  <diagram id="autolayout" name="Page-1">
+    <mxGraphModel dx="800" dy="600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        <mxCell id="s0" value="S0 — Workspace + Core iskeleti&#xa;DONE: cargo check tüm crate'lerde 0 döner" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="0" y="0" width="460" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="s1" value="S1 — geometry, Frame, platform trait'leri + NullPlatform test impl&#xa;DONE: cargo test -p foxshot-core yeşil" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="0" y="100" width="460" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="s2" value="S2 — İLK DİKEY DİLİM: Linux X11 tam ekran çekimi -&gt; PNG (CLI, UI yok)&#xa;DONE: foxshot capture --full -o out.png gerçek görüntü üretir" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="0" y="190" width="460" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="s3" value="S3 — macOS adaptörü: ScreenCaptureKit + TCC preflight&#xa;DONE: aynı komut macOS'ta gerçek görüntü üretir, izin yoksa açıkça söyler" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="0" y="290" width="460" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="s4" value="S4 — wgpu borderless overlay + bölge sürükleme&#xa;DONE: sürüklenen dikdörtgen piksel doğru PNG verir, karışık DPI'da da" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="0" y="380" width="460" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="s5" value="S5 — AnnotationDocument + 5 temel işaret (dikdörtgen, ok, metin, numara, blur)&#xa;DONE: test Frame baytlarının değişmediğini kanıtlar (non-destructive)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="0" y="480" width="460" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="s6" value="S6 — Yükleme: Cloudflare R2 target + doğrulama + link panoya&#xa;DONE: gerçek bucket'a yükler, dönen URL açılır" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="0" y="580" width="460" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="s7" value="S7 — Kütüphane + menü çubuğu paneli (günlük yüzey)&#xa;DONE: kısayoldan linke kadar fareye dokunmadan tamamlanır" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="0" y="670" width="460" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="s8" value="S8 — ModuleRegistry + updates.json kontrolü + bildirim&#xa;DONE: manifest sürümü yükseltilince panelde bildirim çıkar" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="0" y="770" width="460" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="s9" value="S9 — Windows adaptörü&#xa;DONE: aynı Core, üçüncü platformda çekim + yükleme çalışır" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="0" y="860" width="460" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="s10" value="S10 — Kalan 12 işaret, efektler, video ve OCR modülleri&#xa;DONE: her modül ayrı sürümle kurulup kaldırılabilir" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="0" y="960" width="460" height="60" as="geometry"/>
+        </mxCell>
+        <mxCell id="e0" value="" style="html=1;rounded=0;" edge="1" parent="1" source="s0" target="s1">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="230" y="60"/><mxPoint x="230" y="90"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e1" value="" style="html=1;rounded=0;" edge="1" parent="1" source="s1" target="s2">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="230" y="160"/><mxPoint x="230" y="180"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e2" value="" style="html=1;rounded=0;" edge="1" parent="1" source="s2" target="s3">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="230" y="250"/><mxPoint x="230" y="280"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e3" value="" style="html=1;rounded=0;" edge="1" parent="1" source="s3" target="s4">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="230" y="350"/><mxPoint x="230" y="370"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e4" value="" style="html=1;rounded=0;" edge="1" parent="1" source="s4" target="s5">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="230" y="440"/><mxPoint x="230" y="470"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e5" value="" style="html=1;rounded=0;" edge="1" parent="1" source="s5" target="s6">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="230" y="540"/><mxPoint x="230" y="570"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e6" value="" style="html=1;rounded=0;" edge="1" parent="1" source="s6" target="s7">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="230" y="640"/><mxPoint x="230" y="660"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e7" value="" style="html=1;rounded=0;" edge="1" parent="1" source="s7" target="s8">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="230" y="730"/><mxPoint x="230" y="760"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e8" value="" style="html=1;rounded=0;" edge="1" parent="1" source="s8" target="s9">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="230" y="830"/><mxPoint x="230" y="850"/></Array></mxGeometry>
+        </mxCell>
+        <mxCell id="e9" value="" style="html=1;rounded=0;" edge="1" parent="1" source="s9" target="s10">
+          <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="230" y="920"/><mxPoint x="230" y="950"/></Array></mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

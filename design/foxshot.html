@@ -1,0 +1,1977 @@
+<title>FoxShot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap">
+
+<!--
+THESIS: A screen capture tool whose every surface is a soft-cornered card on a warm dark
+ground, where exactly one saturated colour appears and it always means "you can press this".
+Refuses the category default: cool near-black with a neon accent and glass panels.
+OWN-WORLD: Warm coffee-black ground #14100C, raised cards #241D17 lighter than their ground,
+warm hairline #382D24, vermilion #FF6A3D reserved strictly for actionable elements and the
+record-armed state. Roboto throughout; Roboto Mono only for measured quantities. Icon chips
+in tinted rounded squares. Generous internal padding, plain-language labels, low soft shadows.
+STORY: The operator sees that FoxShot is invisible until summoned, that a capture goes from
+keystroke to link without leaving the keyboard, and that every module carries its own version.
+FIRST VIEWPORT: A macOS desktop stage. Menu bar across the top with the FoxShot mark lit;
+its panel dropped open at the right, capture actions ranked as pressable rows with their
+hotkeys in mono. The scenario index sits on the right edge. Primary action: the panel's
+region-capture row.
+FORM: Warm consumer app surface, dark-inverted. Challenger card chosen by the user over the
+dealt assignment; seed key 0a8fa6a4.
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+-->
+
+<style>
+:root{
+  --ground:#14100C; --ground-2:#100D0A;
+  --surface:#1C1713; --well:#181410;
+  --card:#241D17; --card-hi:#2C241C; --card-lo:#201A15;
+  --border:#382D24; --border-hi:#4A3C30; --border-lo:#2A2219;
+  --ink:#F7EFE6; --ink-2:#A99783; --ink-3:#7B6B5B; --ink-4:#5C4F43;
+  --action:#FF6A3D; --action-hi:#FF7F57; --action-lo:#E85526;
+  --action-tint:rgba(255,106,61,.13); --action-tint-hi:rgba(255,106,61,.22);
+  --ok:#63B98C; --ok-tint:rgba(99,185,140,.14);
+  --warn:#D9A036; --warn-tint:rgba(217,160,54,.14);
+  --bad:#E0574C; --bad-tint:rgba(224,87,76,.14);
+  --r-lg:18px; --r-md:12px; --r-sm:8px; --r-pill:999px;
+  --sh-card:0 1px 2px rgba(0,0,0,.45), 0 8px 24px -8px rgba(0,0,0,.55);
+  --sh-pop:0 2px 6px rgba(0,0,0,.5), 0 24px 60px -12px rgba(0,0,0,.7);
+  --sh-win:0 4px 12px rgba(0,0,0,.5), 0 40px 90px -20px rgba(0,0,0,.75);
+  --ff:"Roboto",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --fm:"Roboto Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --ease:cubic-bezier(.16,1,.3,1);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--ground-2); color:var(--ink);
+  font:400 15px/1.5 var(--ff);
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+h1,h2,h3,h4,p{margin:0}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--action);outline-offset:2px;border-radius:4px}
+.mono{font-family:var(--fm);font-variant-numeric:tabular-nums;font-size:.86em;letter-spacing:-.01em}
+.ovl{font:500 11px/1 var(--ff);letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+
+/* ---------- shell ---------- */
+.shell{display:grid;grid-template-columns:minmax(0,1fr) 316px;min-height:100vh}
+@media (max-width:1180px){.shell{grid-template-columns:minmax(0,1fr)}}
+
+/* ---------- desktop stage ---------- */
+.stage{
+  position:relative;overflow:hidden;min-height:760px;
+  background:
+    radial-gradient(120% 90% at 78% 8%, #3B2A1E 0%, transparent 58%),
+    radial-gradient(90% 70% at 12% 92%, #241C2E 0%, transparent 60%),
+    linear-gradient(168deg,#1E1712 0%,#0E0B09 62%,#120E0B 100%);
+}
+.stage::after{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:radial-gradient(rgba(255,255,255,.028) 1px,transparent 1px);
+  background-size:3px 3px;
+}
+.stage.dim .desk-hint,.stage.dim .win{filter:saturate(.5) brightness(.62)}
+
+/* menu bar */
+.mbar{
+  position:relative;z-index:40;height:30px;display:flex;align-items:center;gap:16px;
+  padding:0 14px;background:rgba(14,11,9,.62);backdrop-filter:blur(22px) saturate(1.4);
+  border-bottom:1px solid rgba(255,255,255,.06);font-size:13px;color:var(--ink-2)
+}
+.mbar .apple{width:15px;height:15px;color:var(--ink-2);opacity:.9}
+.mbar .mi{color:var(--ink-2)}
+.mbar .mi.on{color:var(--ink);font-weight:500}
+.mbar .sp{margin-left:auto;display:flex;align-items:center;gap:14px}
+.tray{display:flex;align-items:center;gap:6px;padding:3px 7px;border-radius:var(--r-sm);transition:background .16s}
+.tray:hover{background:rgba(255,255,255,.08)}
+.tray.open{background:rgba(255,106,61,.18)}
+.tray .fox{width:17px;height:17px;color:var(--action)}
+.tray .rec{width:7px;height:7px;border-radius:50%;background:var(--action)}
+.tray-mono{font-family:var(--fm);font-size:11.5px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+
+.desk-hint{
+  position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);text-align:center;
+  color:var(--ink-4);max-width:34ch
+}
+.desk-hint h3{font:700 19px/1.3 var(--ff);color:var(--ink-3);margin-bottom:8px;text-wrap:balance}
+.desk-hint p{font-size:13.5px;line-height:1.6}
+.desk-hint kbd{
+  font-family:var(--fm);font-size:11.5px;background:var(--card);border:1px solid var(--border);
+  border-bottom-width:2px;border-radius:5px;padding:2px 6px;color:var(--ink-2);white-space:nowrap
+}
+
+/* ---------- generic card / control kit ---------- */
+.card{background:var(--card);border:1px solid var(--border-lo);border-radius:var(--r-lg);box-shadow:var(--sh-card)}
+.chip{
+  width:34px;height:34px;flex:0 0 34px;border-radius:10px;background:var(--card-hi);
+  border:1px solid var(--border);display:grid;place-items:center;color:var(--ink-2)
+}
+.chip svg{width:18px;height:18px}
+.chip.act{background:var(--action-tint);border-color:rgba(255,106,61,.34);color:var(--action)}
+.chip.sm{width:26px;height:26px;flex-basis:26px;border-radius:8px}
+.chip.sm svg{width:14px;height:14px}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  height:38px;padding:0 16px;border-radius:var(--r-pill);
+  font-weight:500;font-size:14.5px;white-space:nowrap;
+  transition:background .15s,transform .1s,border-color .15s,color .15s
+}
+.btn svg{width:17px;height:17px}
+.btn-pri{background:var(--action);color:#1A0C05;font-weight:500}
+.btn-pri:hover{background:var(--action-hi)}
+.btn-pri:active{background:var(--action-lo);transform:translateY(1px)}
+.btn-sec{border:1px solid var(--border-hi);color:var(--ink)}
+.btn-sec:hover{background:var(--card-hi);border-color:var(--ink-4)}
+.btn-gho{color:var(--ink-2)}
+.btn-gho:hover{background:var(--card-hi);color:var(--ink)}
+.btn-dan{background:var(--bad-tint);color:var(--bad);border:1px solid rgba(224,87,76,.3)}
+.btn-dan:hover{background:rgba(224,87,76,.22)}
+.btn[disabled],.btn.dis{opacity:.4;pointer-events:none;background:var(--card-hi);color:var(--ink-3);border-color:var(--border-lo)}
+.btn.sm{height:30px;padding:0 12px;font-size:13px}
+.btn.sm svg{width:15px;height:15px}
+.btn.icon{width:34px;padding:0}
+.btn.wide{width:100%}
+
+.field{
+  width:100%;height:38px;padding:0 12px;background:var(--well);
+  border:1px solid var(--border);border-radius:var(--r-md);
+  color:var(--ink);font:400 14px/1 var(--ff);transition:border-color .15s,background .15s
+}
+.field::placeholder{color:var(--ink-4)}
+.field:hover{border-color:var(--border-hi)}
+.field:focus{outline:none;border-color:var(--action);background:var(--surface)}
+.field.bad{border-color:var(--bad)}
+.field.mono{font-family:var(--fm);font-size:13px}
+
+.badge{
+  display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;border-radius:var(--r-pill);
+  font:500 11.5px/1 var(--ff);letter-spacing:.02em;border:1px solid transparent
+}
+.badge .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.b-ok{background:var(--ok-tint);color:var(--ok);border-color:rgba(99,185,140,.28)}
+.b-warn{background:var(--warn-tint);color:var(--warn);border-color:rgba(217,160,54,.28)}
+.b-bad{background:var(--bad-tint);color:var(--bad);border-color:rgba(224,87,76,.3)}
+.b-act{background:var(--action-tint);color:var(--action);border-color:rgba(255,106,61,.32)}
+.b-mut{background:var(--card-hi);color:var(--ink-3);border-color:var(--border)}
+
+kbd.k{
+  font-family:var(--fm);font-size:11.5px;font-variant-numeric:tabular-nums;
+  background:var(--card-hi);border:1px solid var(--border);border-bottom-width:2px;
+  border-radius:5px;padding:2px 6px;color:var(--ink-2);white-space:nowrap
+}
+.bar{height:5px;border-radius:var(--r-pill);background:var(--card-hi);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:inherit;background:var(--action);transition:width .5s var(--ease)}
+.bar.ok i{background:var(--ok)}
+.hr{height:1px;background:var(--border-lo);border:0;margin:0}
+
+/* ---------- menu bar panel ---------- */
+.panel{
+  position:absolute;z-index:38;top:38px;right:14px;width:344px;
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);
+  box-shadow:var(--sh-pop);padding:10px;
+  transform-origin:92% 0;
+  opacity:0;transform:translateY(-8px) scale(.97);pointer-events:none;
+  transition:opacity .18s var(--ease),transform .24s var(--ease)
+}
+.panel.on{opacity:1;transform:none;pointer-events:auto}
+.panel-head{display:flex;align-items:center;gap:9px;padding:6px 8px 10px}
+.panel-head .fox{width:20px;height:20px;color:var(--action)}
+.panel-head b{font-weight:700;font-size:14.5px;letter-spacing:-.01em}
+.panel-head .dest{margin-left:auto;display:flex;align-items:center;gap:5px;font-size:12px;color:var(--ink-2);padding:4px 8px;border-radius:var(--r-pill);border:1px solid var(--border);transition:background .15s}
+.panel-head .dest:hover{background:var(--card-hi)}
+.panel-head .dest svg{width:12px;height:12px}
+
+.act-row{
+  display:flex;align-items:center;gap:11px;width:100%;padding:9px 8px;border-radius:var(--r-md);
+  text-align:left;transition:background .14s
+}
+.act-row:hover{background:var(--card-hi)}
+.act-row .t{font-weight:500;font-size:14px}
+.act-row .s{font-size:12px;color:var(--ink-3);margin-top:1px}
+.act-row .r{margin-left:auto;display:flex;align-items:center;gap:6px}
+.act-row.armed .chip{background:var(--action-tint);border-color:rgba(255,106,61,.34);color:var(--action)}
+
+.strip{padding:8px}
+.strip-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.strip-h span{font:500 12px/1 var(--ff);color:var(--ink-2)}
+.strip-h button{font:500 12px/1 var(--ff);color:var(--action)}
+.frames{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.frame{
+  position:relative;aspect-ratio:16/10;border-radius:10px;overflow:hidden;
+  border:1px solid var(--border);background:var(--well);transition:border-color .15s,transform .12s
+}
+.frame:hover{border-color:var(--action);transform:translateY(-1px)}
+.frame svg{width:100%;height:100%;display:block}
+.frame .tag{
+  position:absolute;left:4px;bottom:4px;font-family:var(--fm);font-size:9.5px;
+  background:rgba(10,8,6,.82);color:var(--ink-2);padding:1px 4px;border-radius:4px
+}
+.frame .up{position:absolute;right:4px;top:4px;width:14px;height:14px;border-radius:50%;background:var(--ok);display:grid;place-items:center}
+.frame .up svg{width:9px;height:9px;color:#0C1A13}
+.panel-foot{display:flex;gap:6px;padding:6px 2px 2px}
+.panel-foot .btn{flex:1}
+
+.pnote{
+  margin:6px 8px 2px;padding:10px 11px;border-radius:var(--r-md);
+  background:var(--warn-tint);border:1px solid rgba(217,160,54,.28);
+  display:flex;gap:9px;align-items:flex-start
+}
+.pnote svg{width:16px;height:16px;color:var(--warn);flex:0 0 16px;margin-top:1px}
+.pnote p{font-size:12.5px;line-height:1.45;color:#E8CE99}
+.pnote b{color:var(--warn);font-weight:500}
+.pnote.act{background:var(--action-tint);border-color:rgba(255,106,61,.3)}
+.pnote.act svg{color:var(--action)}
+.pnote.act p{color:#F0C3AB}
+.pnote.act b{color:var(--action)}
+.pnote.bad{background:var(--bad-tint);border-color:rgba(224,87,76,.3)}
+.pnote.bad svg{color:var(--bad)}
+.pnote.bad p{color:#F0B6B1}
+.pnote.bad b{color:var(--bad)}
+
+.rec-live{display:flex;align-items:center;gap:10px;margin:6px 8px;padding:10px 11px;border-radius:var(--r-md);background:var(--action-tint);border:1px solid rgba(255,106,61,.3)}
+.rec-live .pulse{width:9px;height:9px;border-radius:50%;background:var(--action);animation:pulse 1.4s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.32}}
+
+/* ---------- app window ---------- */
+.win{
+  position:absolute;z-index:20;left:50%;top:calc(50% + 6px);transform:translate(-50%,-50%);
+  width:min(880px,calc(100% - 56px));height:min(568px,calc(100% - 92px));
+  background:var(--ground);border:1px solid var(--border);border-radius:14px;
+  box-shadow:var(--sh-win);display:none;flex-direction:column;overflow:hidden
+}
+.win.on{display:flex}
+.tbar{
+  height:42px;flex:0 0 42px;display:flex;align-items:center;gap:10px;padding:0 14px;
+  background:var(--surface);border-bottom:1px solid var(--border-lo)
+}
+.lights{display:flex;gap:7px}
+.lights i{width:11px;height:11px;border-radius:50%;display:block}
+.lights i:nth-child(1){background:#E0574C}
+.lights i:nth-child(2){background:#D9A036}
+.lights i:nth-child(3){background:#63B98C}
+.tbar .ttl{font-weight:500;font-size:13px;color:var(--ink-2)}
+.tbar .rr{margin-left:auto;display:flex;align-items:center;gap:7px}
+
+.wbody{flex:1;min-height:0;display:flex;flex-direction:column}
+.view{flex:1;min-height:0;display:none;flex-direction:column}
+.view.on{display:flex}
+
+.vhead{padding:18px 20px 12px;display:flex;align-items:flex-end;gap:14px}
+.vhead h2{font:700 22px/1.2 var(--ff);letter-spacing:-.02em;text-wrap:balance}
+.vhead p{font-size:13px;color:var(--ink-3);margin-top:4px}
+.vhead .rr{margin-left:auto;display:flex;align-items:center;gap:8px}
+.vscroll{flex:1;min-height:0;overflow:auto;padding:0 20px 16px}
+.vscroll::-webkit-scrollbar{width:10px}
+.vscroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:6px;border:3px solid var(--ground)}
+
+/* bottom pill nav — the world's nav bar, translated to a desktop command bar */
+.dock{
+  flex:0 0 auto;margin:0 14px 12px;padding:5px;display:flex;gap:3px;
+  background:var(--card);border:1px solid var(--border-lo);border-radius:var(--r-pill);
+  box-shadow:var(--sh-card)
+}
+.dock button{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:7px 4px 6px;border-radius:var(--r-pill);color:var(--ink-3);
+  transition:background .15s,color .15s
+}
+.dock button svg{width:19px;height:19px}
+.dock button span{font:500 11px/1 var(--ff)}
+.dock button:hover{background:var(--card-hi);color:var(--ink-2)}
+.dock button.on{color:var(--action)}
+.dock button.on svg{color:var(--action)}
+.dock .kb{margin-left:auto;display:flex;align-items:center;gap:8px;padding:0 12px 0 14px;border-left:1px solid var(--border-lo)}
+
+/* library */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:12px}
+.plate{
+  border-radius:var(--r-md);overflow:hidden;background:var(--card);border:1px solid var(--border-lo);
+  transition:border-color .15s,transform .12s,box-shadow .15s;text-align:left;width:100%
+}
+.plate:hover{border-color:var(--border-hi);transform:translateY(-2px);box-shadow:var(--sh-card)}
+.plate.sel{border-color:var(--action);box-shadow:0 0 0 1px var(--action)}
+.plate .im{aspect-ratio:16/10;background:var(--well);position:relative}
+.plate .im svg{width:100%;height:100%;display:block}
+.plate .mt{padding:9px 11px 11px;display:flex;align-items:center;gap:8px}
+.plate .mt .nm{font-family:var(--fm);font-size:11.5px;color:var(--ink-2)}
+.plate .mt .rr{margin-left:auto}
+
+.rows{display:flex;flex-direction:column;gap:1px;background:var(--border-lo);border:1px solid var(--border-lo);border-radius:var(--r-md);overflow:hidden}
+.row{display:flex;align-items:center;gap:12px;padding:11px 13px;background:var(--card);transition:background .14s;text-align:left;width:100%}
+.row:hover{background:var(--card-hi)}
+.row .nm{font-weight:500;font-size:13.5px}
+.row .sb{font-size:12px;color:var(--ink-3);margin-top:2px}
+.row .rr{margin-left:auto;display:flex;align-items:center;gap:10px}
+.row.sel{background:var(--action-tint)}
+
+.empty{padding:44px 20px;text-align:center;max-width:44ch;margin:0 auto}
+.empty .chip{margin:0 auto 14px;width:46px;height:46px;flex-basis:46px;border-radius:14px}
+.empty .chip svg{width:23px;height:23px}
+.empty h3{font:700 17px/1.3 var(--ff);margin-bottom:6px;text-wrap:balance}
+.empty p{font-size:13.5px;color:var(--ink-3);line-height:1.6;margin-bottom:16px}
+
+.skel{border-radius:var(--r-md);background:linear-gradient(90deg,var(--card) 0%,var(--card-hi) 50%,var(--card) 100%);background-size:200% 100%;animation:sk 1.3s linear infinite}
+@keyframes sk{to{background-position:-200% 0}}
+
+/* ---------- editor ---------- */
+.ed{flex:1;min-height:0;display:flex}
+.ed-tools{
+  flex:0 0 52px;padding:8px 7px;display:flex;flex-direction:column;gap:3px;
+  background:var(--surface);border-right:1px solid var(--border-lo);overflow:auto
+}
+.ed-tools::-webkit-scrollbar{width:0}
+.tool{
+  width:38px;height:34px;border-radius:9px;display:grid;place-items:center;color:var(--ink-3);
+  transition:background .13s,color .13s;position:relative;flex:0 0 34px
+}
+.tool svg{width:18px;height:18px}
+.tool:hover{background:var(--card-hi);color:var(--ink)}
+.tool.on{background:var(--action-tint);color:var(--action)}
+.tool .kk{position:absolute;right:2px;bottom:1px;font-family:var(--fm);font-size:8.5px;color:var(--ink-4)}
+.tool.on .kk{color:var(--action)}
+.tsep{height:1px;background:var(--border-lo);margin:5px 3px;flex:0 0 1px}
+
+.ed-main{flex:1;min-width:0;display:flex;flex-direction:column}
+.ed-opt{
+  height:44px;flex:0 0 44px;display:flex;align-items:center;gap:10px;padding:0 14px;
+  background:var(--surface);border-bottom:1px solid var(--border-lo);overflow:hidden
+}
+.ed-opt .lab{font:500 11px/1 var(--ff);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-4)}
+.swatches{display:flex;gap:5px}
+.sw{width:20px;height:20px;border-radius:6px;border:1.5px solid transparent;transition:transform .12s}
+.sw:hover{transform:scale(1.12)}
+.sw.on{border-color:var(--ink)}
+.widths{display:flex;gap:3px;align-items:center}
+.wd{width:26px;height:24px;border-radius:6px;display:grid;place-items:center;transition:background .13s}
+.wd:hover{background:var(--card-hi)}
+.wd.on{background:var(--action-tint)}
+.wd i{display:block;background:var(--ink-2);border-radius:2px}
+.wd.on i{background:var(--action)}
+
+.canvas{
+  flex:1;min-height:0;position:relative;display:grid;place-items:center;padding:18px;
+  background:
+    linear-gradient(45deg,var(--ground-2) 25%,transparent 25%,transparent 75%,var(--ground-2) 75%),
+    linear-gradient(45deg,var(--ground-2) 25%,var(--surface) 25%,var(--surface) 75%,var(--ground-2) 75%);
+  background-size:18px 18px;background-position:0 0,9px 9px
+}
+.shot{position:relative;max-width:100%;max-height:100%;border-radius:5px;overflow:hidden;box-shadow:var(--sh-win);line-height:0}
+.shot svg.pic{width:min(520px,100%);height:auto;display:block}
+.marks{position:absolute;inset:0;pointer-events:none}
+.marks svg{width:100%;height:100%;overflow:visible}
+
+.ed-side{
+  flex:0 0 214px;background:var(--surface);border-left:1px solid var(--border-lo);
+  display:flex;flex-direction:column;min-height:0
+}
+.ed-side-h{padding:12px 13px 9px;display:flex;align-items:center;gap:7px}
+.ed-side-h b{font:500 12.5px/1 var(--ff)}
+.ed-side-h .n{margin-left:auto;font-family:var(--fm);font-size:11px;color:var(--ink-4)}
+.finds{flex:1;min-height:0;overflow:auto;padding:0 9px 9px;display:flex;flex-direction:column;gap:4px}
+.finds::-webkit-scrollbar{width:8px}
+.finds::-webkit-scrollbar-thumb{background:var(--border);border-radius:5px;border:2px solid var(--surface)}
+.find{display:flex;align-items:center;gap:9px;padding:7px 8px;border-radius:9px;background:var(--card);border:1px solid var(--border-lo);transition:border-color .14s;width:100%;text-align:left}
+.find:hover{border-color:var(--border-hi)}
+.find .num{width:19px;height:19px;flex:0 0 19px;border-radius:50%;display:grid;place-items:center;font:500 10.5px/1 var(--fm);background:var(--action);color:#1A0C05}
+.find .tx{font-size:12px;font-weight:500}
+.find .co{font-family:var(--fm);font-size:10px;color:var(--ink-4);margin-top:1px}
+.find .x{margin-left:auto;color:var(--ink-4);opacity:0;transition:opacity .14s}
+.find:hover .x{opacity:1}
+.find .x svg{width:13px;height:13px}
+.ed-foot{padding:10px;border-top:1px solid var(--border-lo);display:flex;flex-direction:column;gap:7px}
+
+/* ---------- capture overlay ---------- */
+.ovlay{position:absolute;inset:0;z-index:60;display:none}
+.ovlay.on{display:block}
+.ovlay .veil{position:absolute;inset:0;background:rgba(8,6,5,.62);backdrop-filter:saturate(.35) brightness(.7)}
+.sel{
+  position:absolute;left:20%;top:24%;width:44%;height:42%;
+  box-shadow:0 0 0 9999px rgba(8,6,5,.6);border:1.5px solid var(--action);border-radius:2px;
+  backdrop-filter:none
+}
+.sel .inner{position:absolute;inset:0;overflow:hidden}
+.sel .hh{position:absolute;width:9px;height:9px;background:var(--action);border-radius:2px}
+.sel .hh.tl{left:-5px;top:-5px}.sel .hh.tr{right:-5px;top:-5px}
+.sel .hh.bl{left:-5px;bottom:-5px}.sel .hh.br{right:-5px;bottom:-5px}
+.sel .hh.tc{left:calc(50% - 4.5px);top:-5px}.sel .hh.bc{left:calc(50% - 4.5px);bottom:-5px}
+.sel .hh.lc{left:-5px;top:calc(50% - 4.5px)}.sel .hh.rc{right:-5px;top:calc(50% - 4.5px)}
+.dimtag{
+  position:absolute;left:0;top:-30px;display:flex;align-items:center;gap:8px;
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r-sm);
+  padding:4px 9px;box-shadow:var(--sh-card);font-family:var(--fm);font-size:11.5px;color:var(--ink)
+}
+.dimtag em{color:var(--ink-4);font-style:normal}
+.selbar{
+  position:absolute;left:50%;transform:translateX(-50%);bottom:-52px;display:flex;align-items:center;gap:2px;
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r-pill);
+  padding:5px;box-shadow:var(--sh-pop)
+}
+.selbar .sb{width:34px;height:32px;border-radius:var(--r-pill);display:grid;place-items:center;color:var(--ink-2);transition:background .13s,color .13s}
+.selbar .sb svg{width:17px;height:17px}
+.selbar .sb:hover{background:var(--card-hi);color:var(--ink)}
+.selbar .sb.pri{background:var(--action);color:#1A0C05;width:auto;padding:0 14px;gap:7px;font:500 13px/1 var(--ff)}
+.selbar .sb.pri:hover{background:var(--action-hi)}
+.selbar .vs{width:1px;height:20px;background:var(--border);margin:0 4px}
+
+.cross{position:absolute;pointer-events:none}
+.cross .lx,.cross .ly{position:absolute;background:rgba(255,106,61,.5)}
+.loupe{
+  position:absolute;width:112px;height:112px;border-radius:12px;overflow:hidden;
+  border:1.5px solid var(--action);box-shadow:var(--sh-pop);background:var(--well)
+}
+.loupe .rd{
+  position:absolute;left:0;right:0;bottom:0;background:rgba(10,8,6,.9);
+  font-family:var(--fm);font-size:10px;color:var(--ink);padding:3px 5px;text-align:center
+}
+.loupe .xh{position:absolute;left:50%;top:50%;width:15px;height:15px;transform:translate(-50%,-50%);border:1.5px solid var(--action)}
+
+.osnap{position:absolute;border:1.5px solid var(--action);border-radius:4px;background:var(--action-tint)}
+.olabel{
+  position:absolute;background:var(--card);border:1px solid var(--border);border-radius:var(--r-sm);
+  padding:5px 10px;font-size:12.5px;box-shadow:var(--sh-card);display:flex;align-items:center;gap:7px
+}
+.olabel .mono{color:var(--ink-3)}
+.ohint{
+  position:absolute;left:50%;bottom:26px;transform:translateX(-50%);
+  display:flex;align-items:center;gap:14px;background:rgba(20,16,12,.9);
+  border:1px solid var(--border);border-radius:var(--r-pill);padding:8px 15px;
+  box-shadow:var(--sh-pop);font-size:12.5px;color:var(--ink-2);backdrop-filter:blur(10px)
+}
+.ohint span{display:flex;align-items:center;gap:6px}
+.countdown{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  font:700 96px/1 var(--fm);color:var(--action);text-shadow:0 8px 40px rgba(0,0,0,.7)
+}
+.recbar{
+  position:absolute;left:50%;transform:translateX(-50%);bottom:26px;display:flex;align-items:center;gap:10px;
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r-pill);
+  padding:7px 9px 7px 15px;box-shadow:var(--sh-pop)
+}
+.recbar .t{font-family:var(--fm);font-size:14px;color:var(--ink);font-variant-numeric:tabular-nums}
+
+/* ---------- platform chrome variants (one Core, three shells) ---------- */
+.stage[data-os="linux"] .mbar,.stage[data-os="win"] .mbar{background:rgba(14,11,9,.72)}
+.stage[data-os="linux"] .win,.stage[data-os="win"] .win{border-radius:10px}
+.stage[data-os="linux"] .tbar{height:46px;flex-basis:46px}
+.stage[data-os="win"] .win{border-radius:7px}
+.stage[data-os="win"] .tbar{height:38px;flex-basis:38px;padding-right:0}
+.lights.mac{display:flex}.lights.gn,.lights.wn{display:none}
+.stage[data-os="linux"] .lights.mac{display:none}
+.stage[data-os="linux"] .lights.gn{display:flex;gap:6px;margin-left:auto;order:9}
+.stage[data-os="win"] .lights.mac{display:none}
+.stage[data-os="win"] .lights.wn{display:flex;margin-left:auto;order:9}
+.lights.gn i{width:24px;height:24px;border-radius:50%;background:var(--card-hi);border:1px solid var(--border);display:grid;place-items:center;color:var(--ink-2)}
+.lights.gn i svg{width:11px;height:11px}
+.lights.wn i{width:44px;height:100%;min-height:38px;border-radius:0;background:none;display:grid;place-items:center;color:var(--ink-2)}
+.lights.wn i svg{width:11px;height:11px}
+.lights.wn i:last-child:hover{background:var(--bad);color:#fff}
+.stage[data-os="linux"] .tbar .ttl,.stage[data-os="win"] .tbar .ttl{order:1}
+.osbadge{display:inline-flex;align-items:center;gap:5px;font-family:var(--fm);font-size:10.5px;color:var(--ink-4)}
+
+/* ---------- wizard ---------- */
+.wiz{
+  position:absolute;z-index:50;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:min(560px,calc(100% - 56px));background:var(--ground);border:1px solid var(--border);
+  border-radius:16px;box-shadow:var(--sh-win);display:none;overflow:hidden
+}
+.wiz.on{display:block}
+.wiz-top{padding:22px 26px 0;display:flex;align-items:center;gap:12px}
+.wiz-top .fox{width:26px;height:26px;color:var(--action)}
+.wiz-top .st{margin-left:auto;font-family:var(--fm);font-size:11.5px;color:var(--ink-4)}
+.steps{display:flex;gap:5px;padding:16px 26px 0}
+.steps i{flex:1;height:3px;border-radius:2px;background:var(--card-hi);display:block}
+.steps i.done{background:var(--ok)}
+.steps i.now{background:var(--action)}
+.steps i.skip{background:var(--warn)}
+.wiz-body{padding:20px 26px 8px}
+.wiz-body h2{font:700 24px/1.22 var(--ff);letter-spacing:-.024em;text-wrap:balance;margin-bottom:9px}
+.wiz-body>p{font-size:14.5px;line-height:1.62;color:var(--ink-2);max-width:60ch}
+.why{margin-top:16px;display:flex;flex-direction:column;gap:9px}
+.why div{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;color:var(--ink-2);line-height:1.55}
+.why svg{width:16px;height:16px;color:var(--action);flex:0 0 16px;margin-top:2px}
+.osdlg{
+  margin-top:18px;padding:14px 15px;border-radius:var(--r-md);background:var(--surface);
+  border:1px solid var(--border);display:flex;gap:12px;align-items:flex-start
+}
+.osdlg .chip{flex-basis:32px;width:32px;height:32px}
+.osdlg b{font-size:13.5px;font-weight:500;display:block;margin-bottom:3px}
+.osdlg p{font-size:12.5px;color:var(--ink-3);line-height:1.5}
+.osdlg .fake{margin-top:11px;display:flex;gap:7px}
+.wiz-foot{padding:18px 26px 22px;display:flex;align-items:center;gap:10px}
+.wiz-foot .sk{margin-right:auto;color:var(--ink-3);font-size:13.5px;font-weight:500}
+.wiz-foot .sk:hover{color:var(--ink-2);text-decoration:underline}
+
+/* ---------- modules ---------- */
+.mod{display:flex;align-items:center;gap:13px;padding:13px 15px;background:var(--card);border:1px solid var(--border-lo);border-radius:var(--r-md);transition:border-color .15s}
+.mod:hover{border-color:var(--border-hi)}
+.mod .nm{font-weight:500;font-size:14px;display:flex;align-items:center;gap:8px}
+.mod .ver{font-family:var(--fm);font-size:11.5px;color:var(--ink-4);margin-top:3px}
+.mod .rr{margin-left:auto;display:flex;align-items:center;gap:9px}
+.mod.core{background:linear-gradient(180deg,var(--card-hi),var(--card));border-color:var(--border-hi)}
+.modgrp{margin-bottom:9px;display:flex;align-items:baseline;gap:9px}
+.modgrp b{font:500 12px/1 var(--ff);letter-spacing:.02em;color:var(--ink-2)}
+.modgrp span{font-size:12px;color:var(--ink-4)}
+.modlist{display:flex;flex-direction:column;gap:7px;margin-bottom:18px}
+.chlog{margin-top:9px;padding:11px 12px;background:var(--well);border:1px solid var(--border-lo);border-radius:var(--r-sm)}
+.chlog li{font-size:12.5px;color:var(--ink-2);line-height:1.6;margin-left:14px}
+
+/* ---------- settings ---------- */
+.set{display:flex;flex-direction:column;gap:1px;background:var(--border-lo);border:1px solid var(--border-lo);border-radius:var(--r-md);overflow:hidden;margin-bottom:16px}
+.set .it{display:flex;align-items:center;gap:13px;padding:12px 14px;background:var(--card)}
+.set .it .nm{font-size:13.5px;font-weight:500}
+.set .it .sb{font-size:12px;color:var(--ink-3);margin-top:2px;max-width:52ch;line-height:1.5}
+.set .it .rr{margin-left:auto;display:flex;align-items:center;gap:9px}
+.sw-t{width:38px;height:22px;border-radius:var(--r-pill);background:var(--card-hi);border:1px solid var(--border);position:relative;transition:background .17s,border-color .17s;flex:0 0 38px}
+.sw-t i{position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:var(--ink-3);transition:transform .19s var(--ease),background .17s}
+.sw-t.on{background:var(--action-tint);border-color:rgba(255,106,61,.4)}
+.sw-t.on i{transform:translateX(16px);background:var(--action)}
+.seg{display:flex;gap:2px;padding:2px;background:var(--well);border:1px solid var(--border);border-radius:var(--r-pill)}
+.seg button{padding:4px 11px;border-radius:var(--r-pill);font:500 12.5px/1 var(--ff);color:var(--ink-3);transition:background .14s,color .14s}
+.seg button.on{background:var(--card-hi);color:var(--ink)}
+
+/* ---------- toast ---------- */
+.toasts{position:absolute;z-index:70;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+.toast{
+  display:flex;align-items:center;gap:11px;padding:11px 14px;min-width:264px;
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r-md);
+  box-shadow:var(--sh-pop);animation:tin .34s var(--ease)
+}
+@keyframes tin{from{opacity:0;transform:translateY(10px) scale(.97)}}
+.toast .tt{font-size:13.5px;font-weight:500}
+.toast .ts{font-size:12px;color:var(--ink-3);margin-top:2px}
+.toast .rr{margin-left:auto}
+.toast .lnk{font-family:var(--fm);font-size:11.5px;color:var(--action)}
+
+/* ---------- scenario index ---------- */
+.idx{
+  background:var(--ground);border-left:1px solid var(--border);display:flex;flex-direction:column;
+  height:100vh;position:sticky;top:0
+}
+.idx-h{padding:16px 16px 12px;border-bottom:1px solid var(--border-lo)}
+.idx-h .tl{display:flex;align-items:center;gap:9px;margin-bottom:4px}
+.idx-h .tl .fox{width:19px;height:19px;color:var(--action)}
+.idx-h b{font:700 15px/1 var(--ff);letter-spacing:-.01em}
+.idx-h p{font-size:12px;color:var(--ink-3);line-height:1.5}
+.idx-h .cnt{font-family:var(--fm);font-size:11px;color:var(--ink-4);margin-top:7px}
+.osw{display:flex;gap:2px;padding:2px;margin-top:11px;background:var(--well);border:1px solid var(--border);border-radius:var(--r-pill)}
+.osw button{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:5px 6px;border-radius:var(--r-pill);font:500 11.5px/1 var(--ff);color:var(--ink-3);transition:background .14s,color .14s}
+.osw button svg{width:13px;height:13px}
+.osw button.on{background:var(--card-hi);color:var(--ink)}
+.idx-s{padding:10px 12px;border-bottom:1px solid var(--border-lo)}
+.idx-list{flex:1;min-height:0;overflow:auto;padding:8px 8px 40px}
+.idx-list::-webkit-scrollbar{width:10px}
+.idx-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:6px;border:3px solid var(--ground)}
+.gh{
+  display:flex;align-items:center;gap:8px;padding:11px 8px 6px;position:sticky;top:-8px;
+  background:var(--ground);z-index:2
+}
+.gh b{font:500 11px/1 var(--ff);letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.gh span{margin-left:auto;font-family:var(--fm);font-size:10.5px;color:var(--ink-4)}
+.si{
+  display:flex;align-items:center;gap:9px;width:100%;padding:7px 9px;border-radius:9px;
+  text-align:left;transition:background .13s;color:var(--ink-2)
+}
+.si:hover{background:var(--card)}
+.si.on{background:var(--action-tint);color:var(--ink)}
+.si .n{font-family:var(--fm);font-size:10px;color:var(--ink-4);flex:0 0 26px}
+.si.on .n{color:var(--action)}
+.si .t{font-size:12.5px;line-height:1.35}
+.si-note{
+  padding:9px 10px;margin:0 8px 10px;background:var(--surface);border:1px solid var(--border-lo);
+  border-radius:var(--r-sm);font-size:11.5px;line-height:1.55;color:var(--ink-3)
+}
+.idx-f{padding:10px 14px;border-top:1px solid var(--border-lo);display:flex;align-items:center;gap:8px}
+.idx-f .btn{flex:1}
+
+@media (max-width:1180px){
+  .idx{height:auto;position:static;border-left:0;border-top:1px solid var(--border)}
+  .idx-list{max-height:none;overflow:visible}
+  .stage{min-height:640px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+}
+</style>
+
+<svg class="sr" aria-hidden="true"><defs>
+<g id="ic" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></g>
+</defs>
+<symbol id="i-apple" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M16.7 12.6c0-2.2 1.8-3.3 1.9-3.4-1-1.5-2.6-1.7-3.2-1.7-1.4-.1-2.6.8-3.3.8-.7 0-1.7-.8-2.9-.8-1.5 0-2.9.9-3.7 2.3-1.6 2.7-.4 6.8 1.1 9 .8 1.1 1.6 2.2 2.8 2.2 1.1 0 1.5-.7 2.9-.7 1.3 0 1.7.7 2.8.7 1.2 0 2-1.1 2.8-2.2.6-.9.9-1.7 1.1-2.3-2.6-1-2.3-3.8-2.3-3.9zM14.4 5.9c.6-.7 1-1.7.9-2.7-.9.1-1.9.6-2.5 1.3-.5.6-1 1.6-.9 2.6 1 .1 2-.5 2.5-1.2z"/></symbol>
+<symbol id="i-fox" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" fill-rule="evenodd" d="M12 21.4c-5.5 0-9-4.1-9-9V3.6a.7.7 0 0 1 1.05-.6L9.1 6.1L12 8.7 14.9 6.1l5.05-3.1A.7.7 0 0 1 21 3.6v8.8c0 4.9-3.5 9-9 9zM9.25 11.9a1.15 1.15 0 1 0 0 2.3 1.15 1.15 0 0 0 0-2.3zm5.5 0a1.15 1.15 0 1 0 0 2.3 1.15 1.15 0 0 0 0-2.3zM12 16.1l-1.75.95a.42.42 0 0 0 0 .74l1.35.78a.8.8 0 0 0 .8 0l1.35-.78a.42.42 0 0 0 0-.74z"/></symbol>
+<symbol id="i-region" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8V5.5A2.5 2.5 0 0 1 5.5 3H8M16 3h2.5A2.5 2.5 0 0 1 21 5.5V8M21 16v2.5A2.5 2.5 0 0 1 18.5 21H16M8 21H5.5A2.5 2.5 0 0 1 3 18.5V16"/><path d="M8.5 8.5h7v7h-7z" opacity=".55"/></g></symbol>
+<symbol id="i-window" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 8.5h18M6 6.2h.01M8.6 6.2h.01"/></g></symbol>
+<symbol id="i-monitor" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4" width="19" height="12.5" rx="2"/><path d="M9 20h6M12 16.5V20"/></g></symbol>
+<symbol id="i-video" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="12" rx="2.5"/><path d="M15.5 11l4.3-2.6a.8.8 0 0 1 1.2.7v5.8a.8.8 0 0 1-1.2.7L15.5 13z"/></g></symbol>
+<symbol id="i-rec" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-timer" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 10v3.5l2.2 1.4M9.5 2.5h5"/></g></symbol>
+<symbol id="i-scroll" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M12 7.5v9M9 13.5l3 3 3-3M9 10.5l3-3 3 3"/></g></symbol>
+<symbol id="i-ocr" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5A1.5 1.5 0 0 1 18.5 20H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16"/><path d="M8.5 8.8h7M8.5 12h7M8.5 15.2h4.2"/></g></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15.5V18a2.5 2.5 0 0 0 2.5 2.5h11A2.5 2.5 0 0 0 20 18v-2.5"/><path d="M12 15.5V3.5M7.8 7.7 12 3.5l4.2 4.2"/></g></symbol>
+<symbol id="i-cloud" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18.5h10.2a3.8 3.8 0 0 0 .4-7.6 5.8 5.8 0 0 0-11.2-1.3A4.2 4.2 0 0 0 7 18.5z"/></g></symbol>
+<symbol id="i-folder" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h3.1a2 2 0 0 1 1.5.7l1.1 1.3h6.3A2.5 2.5 0 0 1 21 9.5v8A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5z"/></g></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="8.5" width="12" height="12" rx="2.2"/><path d="M15.5 4.5h-10A2 2 0 0 0 3.5 6.5v10"/></g></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13.8a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1.3 1.3"/><path d="M14 10.2a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1.3-1.3"/></g></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.5l4.8 4.8L19.5 7"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></symbol>
+<symbol id="i-min" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" d="M5 12h14"/></symbol>
+<symbol id="i-max" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1" fill="none" stroke="currentColor" stroke-width="1.7"/></symbol>
+<symbol id="i-cdown" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M6 9.5l6 6 6-6"/></symbol>
+<symbol id="i-cright" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M9.5 6l6 6-6 6"/></symbol>
+<symbol id="i-aright" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12h15M13.5 6l6 6-6 6"/></g></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="6.3"/><path d="M15.5 15.5 20 20"/></g></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M4.5 12H2.1M21.9 12h-2.4M6.7 6.7 5 5M19 19l-1.7-1.7M17.3 6.7 19 5M5 19l1.7-1.7"/></g></symbol>
+<symbol id="i-grid" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.6"/><rect x="13" y="4" width="7" height="7" rx="1.6"/><rect x="4" y="13" width="7" height="7" rx="1.6"/><rect x="13" y="13" width="7" height="7" rx="1.6"/></g></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M4 6.5h16M4 12h16M4 17.5h16"/></g></symbol>
+<symbol id="i-mods" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.8l8 4.3v9.8l-8 4.3-8-4.3V7.1z"/><path d="M4 7.1l8 4.3 8-4.3M12 11.4v9.8"/></g></symbol>
+<symbol id="i-image" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2.4"/><circle cx="8.8" cy="9.8" r="1.6"/><path d="M20.5 15.2 16 11l-8.5 8.5"/></g></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 7h15M9.5 7V5.2A1.2 1.2 0 0 1 10.7 4h2.6a1.2 1.2 0 0 1 1.2 1.2V7"/><path d="M6.5 7l.8 12A1.8 1.8 0 0 0 9.1 20.7h5.8A1.8 1.8 0 0 0 16.7 19l.8-12"/></g></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 2.6 17.2A1.9 1.9 0 0 0 4.3 20h15.4a1.9 1.9 0 0 0 1.7-2.8L13.7 3.9a1.9 1.9 0 0 0-3.4 0z"/><path d="M12 9v4M12 16.4h.01"/></g></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.7"/><path d="M12 11v5.2M12 7.9h.01"/></g></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5a8 8 0 1 0-2.6 6.4"/><path d="M20 4.8v6.7h-6.2"/></g></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15.5V18a2.5 2.5 0 0 0 2.5 2.5h11A2.5 2.5 0 0 0 20 18v-2.5"/><path d="M12 3.5v12M7.8 11.3 12 15.5l4.2-4.2"/></g></symbol>
+<symbol id="i-kbd" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6.5" width="19" height="11" rx="2.2"/><path d="M6 10h.01M9 10h.01M12 10h.01M15 10h.01M18 10h.01M6.5 14h11"/></g></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.4"/><path d="M8.2 10.5V7.6a3.8 3.8 0 0 1 7.6 0v2.9"/></g></symbol>
+<symbol id="i-eye" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2.2 12S5.5 5.8 12 5.8 21.8 12 21.8 12 18.5 18.2 12 18.2 2.2 12 2.2 12z"/><circle cx="12" cy="12" r="2.9"/></g></symbol>
+<symbol id="i-cursor" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M5 3.5l5.4 16.2 2.4-6.3 6.3-2.4z"/></symbol>
+<symbol id="i-rect" viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.75"/></symbol>
+<symbol id="i-ellipse" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="8.4" ry="6.4" fill="none" stroke="currentColor" stroke-width="1.75"/></symbol>
+<symbol id="i-line" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" d="M5 19 19 5"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19 19 5M11.5 5H19v7.5"/></g></symbol>
+<symbol id="i-pen" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 3.9 20.1 7.5 8.6 19H5V15.4z"/><path d="M14.2 6.2l3.6 3.6"/></g></symbol>
+<symbol id="i-marker" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 3.5 20.5 9.5 11 19H5.5l-1.5-4z"/><path d="M4 21h16"/></g></symbol>
+<symbol id="i-text" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5.5h14M12 5.5V19M9 19h6"/></g></symbol>
+<symbol id="i-balloon" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" d="M20 13.5a2.5 2.5 0 0 1-2.5 2.5H9l-4 3.5V6.5A2.5 2.5 0 0 1 7.5 4h10A2.5 2.5 0 0 1 20 6.5z"/></symbol>
+<symbol id="i-num" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.6"/><path d="M10.4 9.6 12.4 8.4V16"/></g></symbol>
+<symbol id="i-crop" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 2.5v13a2 2 0 0 0 2 2h13"/><path d="M2.5 6.5h13a2 2 0 0 1 2 2v13"/></g></symbol>
+<symbol id="i-blur" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="8.6"/><path d="M6 10h12M6 13.5h12M8 16.8h8M8 6.9h8"/></g></symbol>
+<symbol id="i-pixel" viewBox="0 0 24 24"><g fill="currentColor" stroke="none"><rect x="4" y="4" width="5" height="5" rx=".8"/><rect x="10.5" y="4" width="5" height="5" rx=".8" opacity=".5"/><rect x="4" y="10.5" width="5" height="5" rx=".8" opacity=".5"/><rect x="10.5" y="10.5" width="5" height="5" rx=".8"/><rect x="17" y="10.5" width="3" height="5" rx=".8" opacity=".4"/><rect x="4" y="17" width="5" height="3" rx=".8" opacity=".4"/></g></symbol>
+<symbol id="i-magnify" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="10.8" cy="10.8" r="6.3"/><path d="M15.5 15.5 20 20M8.3 10.8h5M10.8 8.3v5"/></g></symbol>
+<symbol id="i-spot" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="12" cy="12" r="4.6"/><path d="M12 2.6v2.4M12 19v2.4M2.6 12H5M19 12h2.4M5.6 5.6 7.3 7.3M16.7 16.7l1.7 1.7M18.4 5.6 16.7 7.3M5.6 18.4l1.7-1.7"/></g></symbol>
+<symbol id="i-eraser" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 4.3 4.3 13.5a2 2 0 0 0 0 2.8l3.4 3.4h6l6.9-6.9a2 2 0 0 0 0-2.8l-4.3-4.3a2 2 0 0 0-2.8 0z"/><path d="M9 19.7 19.7 9"/></g></symbol>
+<symbol id="i-sticker" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3.5H6.5A2.5 2.5 0 0 0 4 6v12a2.5 2.5 0 0 0 2.5 2.5h8L20.5 15V9z"/><path d="M14 3.5V8a1.5 1.5 0 0 0 1.5 1.5h4.5"/></g></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11.5h10.5a4.5 4.5 0 0 1 0 9H9"/><path d="M7.8 7.7 4 11.5l3.8 3.8"/></g></symbol>
+<symbol id="i-redo" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11.5H9.5a4.5 4.5 0 0 0 0 9H15"/><path d="M16.2 7.7 20 11.5l-3.8 3.8"/></g></symbol>
+<symbol id="i-save" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 6.5A2 2 0 0 1 6.5 4.5h8L19.5 9.5v8a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2z"/><path d="M8 4.5v5h6v-5M8 19.5v-5h8v5"/></g></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M8 5.2 19 12 8 18.8z"/></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24"><g fill="currentColor" stroke="none"><rect x="7" y="5" width="3.6" height="14" rx="1.2"/><rect x="13.4" y="5" width="3.6" height="14" rx="1.2"/></g></symbol>
+<symbol id="i-stop" viewBox="0 0 24 24"><rect x="6.5" y="6.5" width="11" height="11" rx="2" fill="currentColor" stroke="none"/></symbol>
+<symbol id="i-wifioff" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4l18 16"/><path d="M6.5 11.2a9 9 0 0 1 3.2-2M14.4 9.5a9 9 0 0 1 3.1 1.7M9.3 14.3a5 5 0 0 1 2.7-.8M12 18.6h.01"/></g></symbol>
+<symbol id="i-hdd" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="13" width="18" height="7" rx="2.2"/><path d="M5.6 13 8 4.5h8l2.4 8.5M7 16.5h.01M10 16.5h.01"/></g></symbol>
+<symbol id="i-qr" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="4" y="4" width="6" height="6" rx="1.2"/><rect x="14" y="4" width="6" height="6" rx="1.2"/><rect x="4" y="14" width="6" height="6" rx="1.2"/><path d="M14 14h2.5v2.5H14zM17.5 17.5H20V20h-2.5z"/></g></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21v-6.5M8 3.5h8l-1 6.5a3 3 0 0 1-3 2.5h0a3 3 0 0 1-3-2.5z"/></g></symbol>
+<symbol id="i-ruler" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="1.8" y="8" width="20.4" height="8" rx="2" transform="rotate(-45 12 12)"/><path d="M9 8.6l1.6 1.6M12 5.6l1.6 1.6M6 11.6l1.6 1.6"/></g></symbol>
+<symbol id="i-palette" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5a8.5 8.5 0 1 1 8.5-8.5c0 2.3-2 3.2-3.6 3.2h-1.6a2 2 0 0 0-1.5 3.3 1.6 1.6 0 0 1-1.2 2z"/><path d="M8 9.2h.01M12 7.4h.01M15.7 9.4h.01"/></g></symbol>
+<symbol id="i-linux" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M12 2.2c-2.4 0-3.5 1.9-3.5 4.2 0 1.6.3 2.3-.3 3.4-1 1.8-2.6 3.4-3.3 5.6-.5 1.5.1 2.3 1.2 2.1.5-.1.6.2.6.6 0 1.7 2.2 3.1 5.3 3.1s5.3-1.4 5.3-3.1c0-.4.1-.7.6-.6 1.1.2 1.7-.6 1.2-2.1-.7-2.2-2.3-3.8-3.3-5.6-.6-1.1-.3-1.8-.3-3.4 0-2.3-1.1-4.2-3.5-4.2zm-1.6 3.1a.85 1.05 0 1 1 0 2.1.85 1.05 0 0 1 0-2.1zm3.2 0a.85 1.05 0 1 1 0 2.1.85 1.05 0 0 1 0-2.1zM12 8.3c1 0 2 .6 2 1.1 0 .4-.9 1.1-2 1.1s-2-.7-2-1.1c0-.5 1-1.1 2-1.1z"/></symbol>
+<symbol id="i-win" viewBox="0 0 24 24"><g fill="currentColor" stroke="none"><path d="M3 4.6l8.2-1.1v8.1H3zM12.4 3.3 21 2.1v9.5h-8.6zM3 12.8h8.2v8.1L3 19.7zM12.4 12.8H21v9.5l-8.6-1.2z"/></g></symbol>
+<symbol id="i-shield" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.8 4.5 5.6v6.1c0 4.3 3 7.6 7.5 9.5 4.5-1.9 7.5-5.2 7.5-9.5V5.6z"/><path d="M9 12l2.2 2.2L15.4 10"/></g></symbol>
+<symbol id="i-wave" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M3 12h2.5l2-5 2.5 10 2.5-7 2 4h6.5"/></g></symbol>
+<symbol id="i-shot-code" viewBox="0 0 320 200"><rect width="320" height="200" fill="#1B1B22"/><rect width="320" height="22" fill="#141419"/><circle cx="12" cy="11" r="3.2" fill="#E0574C"/><circle cx="23" cy="11" r="3.2" fill="#D9A036"/><circle cx="34" cy="11" r="3.2" fill="#63B98C"/><rect x="0" y="22" width="54" height="178" fill="#16161C"/><g fill="#3A3A46"><rect x="8" y="34" width="38" height="4" rx="2"/><rect x="8" y="46" width="30" height="4" rx="2"/><rect x="8" y="58" width="34" height="4" rx="2"/><rect x="8" y="70" width="26" height="4" rx="2"/></g><g font-family="monospace" font-size="8.5"><text x="64" y="42" fill="#C678DD">fn</text><text x="82" y="42" fill="#61AFEF">capture_region</text><text x="176" y="42" fill="#ABB2BF">(</text><text x="182" y="42" fill="#E06C75">rect</text><text x="208" y="42" fill="#ABB2BF">) {</text><text x="76" y="58" fill="#C678DD">let</text><text x="98" y="58" fill="#E5C07B">buf</text><text x="120" y="58" fill="#ABB2BF">=</text><text x="130" y="58" fill="#98C379">gpu::read</text><text x="188" y="58" fill="#ABB2BF">();</text><text x="76" y="74" fill="#5C6370">// core → platform</text><text x="76" y="90" fill="#E5C07B">buf</text><text x="98" y="90" fill="#ABB2BF">.</text><text x="104" y="90" fill="#61AFEF">encode</text><text x="146" y="90" fill="#ABB2BF">()</text><text x="64" y="106" fill="#ABB2BF">}</text></g><rect x="64" y="122" width="120" height="5" rx="2.5" fill="#2A2A34"/><rect x="64" y="134" width="180" height="5" rx="2.5" fill="#2A2A34"/><rect x="64" y="146" width="96" height="5" rx="2.5" fill="#2A2A34"/></symbol>
+<symbol id="i-shot-bug" viewBox="0 0 320 200"><rect width="320" height="200" fill="#F4F1EC"/><rect width="320" height="26" fill="#E4DFD7"/><circle cx="13" cy="13" r="3.4" fill="#C9C2B7"/><circle cx="25" cy="13" r="3.4" fill="#C9C2B7"/><rect x="42" y="7" width="200" height="12" rx="6" fill="#F4F1EC"/><rect x="0" y="26" width="320" height="34" fill="#fff"/><rect x="16" y="36" width="88" height="10" rx="3" fill="#2B241F"/><rect x="240" y="34" width="64" height="14" rx="7" fill="#FF6A3D"/><g><rect x="16" y="74" width="180" height="8" rx="3" fill="#2B241F"/><rect x="16" y="90" width="240" height="6" rx="3" fill="#B9B0A4"/><rect x="16" y="102" width="210" height="6" rx="3" fill="#B9B0A4"/><rect x="16" y="122" width="132" height="46" rx="6" fill="#fff" stroke="#DED7CC"/><rect x="26" y="132" width="60" height="7" rx="3" fill="#2B241F"/><rect x="26" y="146" width="96" height="5" rx="2.5" fill="#C4BBAF"/><rect x="164" y="122" width="132" height="46" rx="6" fill="#fff" stroke="#DED7CC"/><rect x="174" y="132" width="72" height="7" rx="3" fill="#2B241F"/><rect x="174" y="146" width="88" height="5" rx="2.5" fill="#C4BBAF"/></g></symbol>
+<symbol id="i-shot-term" viewBox="0 0 320 200"><rect width="320" height="200" fill="#0E0C0A"/><rect width="320" height="20" fill="#181510"/><g font-family="monospace" font-size="8"><text x="10" y="38" fill="#63B98C">$</text><text x="22" y="38" fill="#F7EFE6">cargo build -p foxshot-core</text><text x="10" y="54" fill="#7B6B5B">   Compiling foxshot-core v0.4.1</text><text x="10" y="70" fill="#7B6B5B">   Compiling foxshot-platform-macos</text><text x="10" y="86" fill="#7B6B5B">   Compiling foxshot-platform-linux</text><text x="10" y="102" fill="#63B98C">    Finished</text><text x="80" y="102" fill="#F7EFE6">release [optimized]</text><text x="10" y="126" fill="#63B98C">$</text><text x="22" y="126" fill="#F7EFE6">foxshot --version</text><text x="10" y="142" fill="#F7EFE6">foxshot 0.4.1 (core 0.4.1)</text><text x="10" y="158" fill="#63B98C">$</text><rect x="22" y="151" width="6" height="10" fill="#FF6A3D"/></g></symbol>
+<symbol id="i-shot-dash" viewBox="0 0 320 200"><rect width="320" height="200" fill="#151318"/><rect x="0" y="0" width="72" height="200" fill="#1C1A21"/><g fill="#2E2B36"><rect x="12" y="18" width="44" height="5" rx="2.5"/><rect x="12" y="34" width="36" height="5" rx="2.5"/><rect x="12" y="50" width="40" height="5" rx="2.5"/></g><rect x="86" y="16" width="96" height="8" rx="4" fill="#EDEAF2"/><rect x="86" y="36" width="98" height="54" rx="7" fill="#1E1C24"/><rect x="192" y="36" width="98" height="54" rx="7" fill="#1E1C24"/><g fill="#6C5CE7"><rect x="96" y="70" width="8" height="12" rx="2"/><rect x="108" y="62" width="8" height="20" rx="2"/><rect x="120" y="54" width="8" height="28" rx="2"/><rect x="132" y="66" width="8" height="16" rx="2"/></g><text x="202" y="62" font-family="monospace" font-size="14" fill="#EDEAF2">98.4%</text><rect x="86" y="102" width="204" height="82" rx="7" fill="#1E1C24"/><g fill="#302D3A"><rect x="98" y="116" width="180" height="5" rx="2.5"/><rect x="98" y="132" width="150" height="5" rx="2.5"/><rect x="98" y="148" width="168" height="5" rx="2.5"/><rect x="98" y="164" width="120" height="5" rx="2.5"/></g></symbol>
+</svg>
+
+<div class="shell">
+<div class="stage" id="stage" data-os="mac">
+
+  <div class="mbar">
+    <svg class="apple"><use href="#i-apple"/></svg>
+    <span class="mi on" id="mb-app">FoxShot</span>
+    <span class="mi">Dosya</span><span class="mi">Yakala</span><span class="mi">Düzenle</span><span class="mi">Pencere</span>
+    <div class="sp">
+      <span class="tray-mono" id="mb-rec"></span>
+      <button class="tray" id="tray" aria-label="FoxShot panelini aç">
+        <svg class="fox"><use href="#i-fox"/></svg>
+        <span class="rec" id="tray-rec" hidden></span>
+      </button>
+      <span class="tray-mono">14:32</span>
+    </div>
+  </div>
+
+  <div class="desk-hint" id="deskhint">
+    <h3>FoxShot menü çubuğunda bekliyor</h3>
+    <p>Tilki simgesine bas, ya da <kbd>⌘⇧4</kbd> ile doğrudan bölge yakala. Sağdaki senaryo listesinden herhangi bir duruma atlayabilirsin.</p>
+  </div>
+
+  <!-- ============ menu bar panel ============ -->
+  <div class="panel" id="panel" role="dialog" aria-label="FoxShot paneli">
+    <div class="panel-head">
+      <svg class="fox"><use href="#i-fox"/></svg>
+      <b>FoxShot</b>
+      <button class="dest" id="p-dest"><svg><use href="#i-cloud"/></svg><span id="p-dest-t">Cloudflare R2</span><svg><use href="#i-cdown"/></svg></button>
+    </div>
+
+    <div id="p-notes"></div>
+
+    <div id="p-actions">
+      <button class="act-row" data-scn="cap-region-idle">
+        <span class="chip"><svg><use href="#i-region"/></svg></span>
+        <span><span class="t">Bölge seç</span><span class="s">Sürükleyerek alan belirle</span></span>
+        <span class="r"><kbd class="k">⌘⇧4</kbd></span>
+      </button>
+      <button class="act-row" data-scn="cap-window-hover">
+        <span class="chip"><svg><use href="#i-window"/></svg></span>
+        <span><span class="t">Pencere</span><span class="s">Üstüne gel, tıkla</span></span>
+        <span class="r"><kbd class="k">⌘⇧5</kbd></span>
+      </button>
+      <button class="act-row" data-scn="cap-full-pick">
+        <span class="chip"><svg><use href="#i-monitor"/></svg></span>
+        <span><span class="t">Tam ekran</span><span class="s">Ekran seç</span></span>
+        <span class="r"><kbd class="k">⌘⇧3</kbd></span>
+      </button>
+      <button class="act-row" data-scn="cap-rec-live">
+        <span class="chip"><svg><use href="#i-video"/></svg></span>
+        <span><span class="t">Ekranı kaydet</span><span class="s">Video veya GIF</span></span>
+        <span class="r"><span class="badge b-mut">Modül</span><kbd class="k">⌘⇧6</kbd></span>
+      </button>
+      <button class="act-row" data-scn="cap-region-last">
+        <span class="chip"><svg><use href="#i-refresh"/></svg></span>
+        <span><span class="t">Son bölgeyi tekrarla</span><span class="s mono" id="p-last">1284 × 812</span></span>
+        <span class="r"><kbd class="k">⌘⇧7</kbd></span>
+      </button>
+    </div>
+
+    <hr class="hr">
+    <div class="strip">
+      <div class="strip-h"><span id="p-strip-t">Son çekimler</span><button data-scn="lib-grid">Tümü</button></div>
+      <div class="frames" id="p-frames"></div>
+    </div>
+    <hr class="hr">
+    <div class="panel-foot">
+      <button class="btn btn-gho sm" data-scn="lib-grid"><svg><use href="#i-grid"/></svg>Kütüphane</button>
+      <button class="btn btn-gho sm" data-scn="set-general"><svg><use href="#i-gear"/></svg>Ayarlar</button>
+    </div>
+  </div>
+
+  <!-- ============ main window ============ -->
+  <div class="win" id="win">
+    <div class="tbar">
+      <div class="lights mac"><i></i><i></i><i></i></div>
+      <div class="lights gn"><i><svg><use href="#i-min"/></svg></i><i><svg><use href="#i-max"/></svg></i><i><svg><use href="#i-x"/></svg></i></div>
+      <div class="lights wn"><i><svg><use href="#i-min"/></svg></i><i><svg><use href="#i-max"/></svg></i><i><svg><use href="#i-x"/></svg></i></div>
+      <span class="ttl" id="win-title">Kütüphane</span>
+      <div class="rr"><span class="osbadge" id="os-badge"></span></div>
+    </div>
+
+    <div class="wbody">
+      <!-- library -->
+      <section class="view" id="v-lib">
+        <div class="vhead">
+          <div><h2>Kütüphane</h2><p id="lib-sub">142 çekim · 2,1 GB · Belgeler/FoxShot</p></div>
+          <div class="rr">
+            <div class="seg" id="lib-seg">
+              <button class="on" data-lv="grid"><svg style="width:14px;height:14px" ><use href="#i-grid"/></svg></button>
+              <button data-lv="list"><svg style="width:14px;height:14px"><use href="#i-list"/></svg></button>
+            </div>
+            <button class="btn btn-sec sm"><svg><use href="#i-search"/></svg>Ara</button>
+          </div>
+        </div>
+        <div class="vscroll" id="lib-body"></div>
+      </section>
+
+      <!-- editor -->
+      <section class="view" id="v-ed">
+        <div class="ed">
+          <div class="ed-tools" id="ed-tools"></div>
+          <div class="ed-main">
+            <div class="ed-opt" id="ed-opt"></div>
+            <div class="canvas">
+              <div class="shot" id="ed-shot">
+                <svg class="pic" viewBox="0 0 320 200"><use href="#i-shot-bug"/></svg>
+                <div class="marks" id="ed-marks"></div>
+              </div>
+            </div>
+          </div>
+          <div class="ed-side">
+            <div class="ed-side-h"><b id="ed-side-t">Bulgular</b><span class="n" id="ed-side-n">0</span></div>
+            <div class="finds" id="ed-finds"></div>
+            <div class="ed-foot" id="ed-foot"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- modules -->
+      <section class="view" id="v-mod">
+        <div class="vhead">
+          <div><h2 id="mod-h2">Modüller</h2><p id="mod-sub">Her modül kendi sürümünü taşır ve ayrı güncellenir</p></div>
+          <div class="rr" id="mod-actions"></div>
+        </div>
+        <div class="vscroll" id="mod-body"></div>
+      </section>
+
+      <!-- settings -->
+      <section class="view" id="v-set">
+        <div class="vhead">
+          <div><h2 id="set-h2">Ayarlar</h2><p id="set-sub">Genel</p></div>
+          <div class="rr" id="set-actions"></div>
+        </div>
+        <div class="vscroll" id="set-body"></div>
+      </section>
+
+      <!-- upload / destinations -->
+      <section class="view" id="v-up">
+        <div class="vhead">
+          <div><h2 id="up-h2">Yükleme hedefleri</h2><p id="up-sub">Çekimin nereye gideceğini seç</p></div>
+          <div class="rr" id="up-actions"></div>
+        </div>
+        <div class="vscroll" id="up-body"></div>
+      </section>
+    </div>
+
+    <nav class="dock" id="dock">
+      <button data-view="lib" class="on"><svg><use href="#i-grid"/></svg><span>Kütüphane</span></button>
+      <button data-view="ed"><svg><use href="#i-pen"/></svg><span>Editör</span></button>
+      <button data-view="up"><svg><use href="#i-upload"/></svg><span>Yükleme</span></button>
+      <button data-view="mod"><svg><use href="#i-mods"/></svg><span>Modüller</span></button>
+      <button data-view="set"><svg><use href="#i-gear"/></svg><span>Ayarlar</span></button>
+      <div class="kb"><kbd class="k">⌘1</kbd><kbd class="k">…</kbd><kbd class="k">⌘5</kbd></div>
+    </nav>
+  </div>
+
+  <!-- ============ capture overlay ============ -->
+  <div class="ovlay" id="ovlay"></div>
+
+  <!-- ============ wizard ============ -->
+  <div class="wiz" id="wiz">
+    <div class="wiz-top"><svg class="fox"><use href="#i-fox"/></svg><b style="font-weight:700;font-size:14.5px">FoxShot kurulumu</b><span class="st" id="wiz-st">1 / 7</span></div>
+    <div class="steps" id="wiz-steps"></div>
+    <div class="wiz-body" id="wiz-body"></div>
+    <div class="wiz-foot" id="wiz-foot"></div>
+  </div>
+
+  <div class="toasts" id="toasts"></div>
+</div>
+
+<!-- ============ scenario index ============ -->
+<aside class="idx">
+  <div class="idx-h">
+    <div class="tl"><svg class="fox"><use href="#i-fox"/></svg><b>FoxShot</b></div>
+    <p>Tıklanabilir tasarım prototipi. Tek Core, üç platform kabuğu.</p>
+    <div class="osw" id="osw">
+      <button class="on" data-os="mac"><svg><use href="#i-apple"/></svg>macOS</button>
+      <button data-os="linux"><svg><use href="#i-linux"/></svg>Linux</button>
+      <button data-os="win"><svg><use href="#i-win"/></svg>Windows</button>
+    </div>
+    <div class="cnt" id="idx-cnt"></div>
+  </div>
+  <div class="idx-s"><input class="field mono" id="idx-q" placeholder="senaryo ara…" aria-label="Senaryo ara"></div>
+  <div class="si-note" id="si-note">Bir senaryo seç — sahne o duruma geçer. Uygulamadaki tuşlar da gerçekten çalışıyor.</div>
+  <div class="idx-list" id="idx-list"></div>
+  <div class="idx-f">
+    <button class="btn btn-sec sm" id="btn-prev">Önceki</button>
+    <button class="btn btn-pri sm" id="btn-next">Sonraki</button>
+  </div>
+</aside>
+</div>
+
+<script>
+"use strict";
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const h = (t,...k) => { const e=document.createElement(t); if(k[0]&&typeof k[0]==="object"&&!(k[0] instanceof Node)){for(const [a,v] of Object.entries(k.shift())){if(a==="class")e.className=v;else if(a==="html")e.innerHTML=v;else e.setAttribute(a,v);}} k.flat().forEach(c=>c!=null&&e.append(c.nodeType?c:document.createTextNode(c))); return e; };
+const ic = (n,cls="") => `<svg class="${cls}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+
+/* synthetic captures — placeholder content, replace with real assets before shipping */
+const CAPS = [
+  {id:"FS-0834", pic:"shot-bug",  name:"checkout-hata.png",  dim:"1284 × 812", size:"412 KB", t:"2 dk önce",  up:true,  url:"fxs.to/a9Kq2"},
+  {id:"FS-0833", pic:"shot-code", name:"core-capture.png",   dim:"1608 × 984", size:"688 KB", t:"18 dk önce", up:true,  url:"fxs.to/M4pLx"},
+  {id:"FS-0832", pic:"shot-term", name:"cargo-build.png",    dim:"980 × 620",  size:"104 KB", t:"1 sa önce",  up:false},
+  {id:"FS-0831", pic:"shot-dash", name:"panel-uptime.png",   dim:"1920 × 1200",size:"1,2 MB", t:"3 sa önce",  up:true,  url:"fxs.to/7Zbnd"},
+  {id:"FS-0830", pic:"shot-bug",  name:"form-dogrulama.png", dim:"1140 × 720", size:"296 KB", t:"Dün",        up:false},
+  {id:"FS-0829", pic:"shot-code", name:"platform-trait.png", dim:"1608 × 900", size:"540 KB", t:"Dün",        up:true,  url:"fxs.to/Qw3rT"},
+];
+const TOOLS = [
+  ["cursor","Seç","V"],["rect","Dikdörtgen","R"],["ellipse","Elips","E"],["line","Çizgi","L"],["arrow","Ok","A"],
+  ["sep"],["pen","Kalem","P"],["marker","Marker","H"],["text","Metin","T"],["balloon","Balon","B"],["num","Numara","N"],
+  ["sep"],["blur","Bulanıklaştır","F"],["pixel","Pikselleştir","X"],["magnify","Büyüteç","M"],["spot","Spot","S"],["eraser","Akıllı silgi","D"],
+  ["sep"],["crop","Kırp","C"],["sticker","Görsel ekle","I"]
+];
+const INKS = ["#FF6A3D","#E0574C","#D9A036","#63B98C","#4C8FD9","#F7EFE6"];
+
+const OS = {
+  mac:{n:"macOS", ic:"apple", mod:"⌘", ver:"15.3", perm:"Ekran Kaydı", note:"TCC izinleri"},
+  linux:{n:"Linux", ic:"linux", mod:"Ctrl", ver:"Wayland", perm:"Ekran paylaşımı", note:"xdg-desktop-portal"},
+  win:{n:"Windows", ic:"win", mod:"Ctrl", ver:"11", perm:"Grafik yakalama", note:"Graphics Capture"}
+};
+
+const base = () => ({
+  os:S?S.os:"mac", view:"lib", panel:false, win:false, wiz:null, ovl:null,
+  libView:"grid", libState:"normal", sel:null,
+  edTool:"num", edFinds:2, edState:"normal", edPic:"shot-bug",
+  modState:"list", modBusy:null, setPane:"general", upState:"list",
+  notes:[], toasts:[], rec:null, dim:"1284 × 812", hint:true
+});
+let S = null; S = base();
+
+function set(o){ Object.assign(S,o); render(); }
+function reset(o){ const os=S.os; S=base(); S.os=os; Object.assign(S,o||{}); render(); }
+
+/* ---------------- panel ---------------- */
+function renderPanel(){
+  $("#panel").classList.toggle("on",!!S.panel);
+  $("#tray").classList.toggle("open",!!S.panel);
+  $("#tray-rec").hidden = !S.rec;
+  $("#mb-rec").textContent = S.rec ? S.rec.t : "";
+  const nb=$("#p-notes"); nb.innerHTML="";
+  (S.notes||[]).forEach(n=>{
+    if(n.kind==="rec"){
+      nb.append(h("div",{class:"rec-live"},
+        h("span",{class:"pulse"}),
+        h("div",null,h("div",{class:"t",style:"font-weight:500;font-size:13.5px"},"Kayıt sürüyor"),
+          h("div",{class:"mono",style:"color:var(--ink-3);margin-top:2px"},n.t)),
+        h("button",{class:"btn btn-gho icon sm",style:"margin-left:auto",html:ic("pause")}),
+        h("button",{class:"btn btn-pri sm",html:ic("stop")+"Bitir"})));
+      return;
+    }
+    nb.append(h("div",{class:"pnote "+(n.tone||""),html:ic(n.icon||"alert")+"<p>"+n.text+"</p>"+
+      (n.act?`<button class="btn btn-sec sm" style="flex:0 0 auto;margin-left:auto" data-scn="${n.act[1]}">${n.act[0]}</button>`:"")}));
+  });
+  const fr=$("#p-frames"); fr.innerHTML="";
+  const list = S.libState==="empty"?[]:CAPS.slice(0,3);
+  if(!list.length){
+    fr.append(h("div",{style:"grid-column:1/-1;padding:14px 4px;text-align:center;font-size:12.5px;color:var(--ink-4);line-height:1.5"},
+      "Henüz çekim yok. İlk çekimin burada görünecek."));
+  } else list.forEach(c=>{
+    fr.append(h("button",{class:"frame","data-scn":"ed-tool-num",html:
+      `<svg viewBox="0 0 320 200"><use href="#i-${c.pic}"/></svg><span class="tag">${c.id}</span>`+
+      (c.up?`<span class="up">${ic("check")}</span>`:"")}));
+  });
+  $("#p-last").textContent = S.dim;
+}
+
+/* ---------------- toasts ---------------- */
+function renderToasts(){
+  const t=$("#toasts"); t.innerHTML="";
+  (S.toasts||[]).forEach(x=>{
+    t.append(h("div",{class:"toast",html:
+      `<span class="chip sm ${x.tone==="ok"?"act":""}" style="${x.tone==="ok"?"background:var(--ok-tint);border-color:rgba(99,185,140,.3);color:var(--ok)":x.tone==="bad"?"background:var(--bad-tint);border-color:rgba(224,87,76,.3);color:var(--bad)":""}">${ic(x.icon||"check")}</span>`+
+      `<span><span class="tt">${x.t}</span>${x.s?`<span class="ts">${x.s}</span>`:""}</span>`+
+      (x.link?`<span class="rr"><span class="lnk">${x.link}</span></span>`:x.btn?`<span class="rr"><button class="btn btn-sec sm">${x.btn}</button></span>`:"")}));
+  });
+}
+
+/* ---------------- capture overlay ---------------- */
+const OVL = {
+  "region-idle":()=>`<div class="veil"></div>
+    <div class="cross" style="left:0;top:0;width:100%;height:100%">
+      <div class="lx" style="left:0;right:0;top:38%;height:1px"></div>
+      <div class="ly" style="top:0;bottom:0;left:44%;width:1px"></div>
+    </div>
+    <div class="loupe" style="left:calc(44% + 14px);top:calc(38% + 14px)">
+      <svg viewBox="0 0 320 200" style="width:100%;height:100%;transform:scale(3);transform-origin:44% 38%"><use href="#i-shot-bug"/></svg>
+      <div class="xh"></div><div class="rd">612 , 344</div></div>
+    <div class="ohint"><span>${ic("cursor")}Sürükle</span><span><kbd class="k">Space</kbd> pencere modu</span><span><kbd class="k">Esc</kbd> iptal</span></div>`,
+  "region-drag":()=>`<div class="veil"></div>
+    <div class="sel" style="width:38%;height:34%"><div class="dimtag"><span>842 × 486</span><em>·</em><span>x 268 y 192</span></div>
+      <span class="hh br"></span></div>
+    <div class="ohint"><span>Bırakınca araç çubuğu çıkar</span><span><kbd class="k">Shift</kbd> oranı kilitle</span></div>`,
+  "region-sel":(o={})=>`<div class="veil"></div>
+    <div class="sel">
+      <div class="dimtag"><span>${o.dim||"1284 × 812"}</span><em>·</em><span>2× ölçek</span></div>
+      ${["tl","tr","bl","br","tc","bc","lc","rc"].map(p=>`<span class="hh ${p}"></span>`).join("")}
+      <div class="selbar">
+        <button class="sb pri" data-scn="ed-tool-num">${ic("pen")}Düzenle</button>
+        <span class="vs"></span>
+        <button class="sb" title="Yükle" data-scn="up-progress">${ic("upload")}</button>
+        <button class="sb" title="Kaydet" data-scn="lib-grid">${ic("save")}</button>
+        <button class="sb" title="Kopyala">${ic("copy")}</button>
+        <button class="sb" title="Metni oku">${ic("ocr")}</button>
+        <span class="vs"></span>
+        <button class="sb" title="İptal" data-scn="idle">${ic("x")}</button>
+      </div>
+    </div>`,
+  "region-key":()=>`<div class="veil"></div>
+    <div class="sel" style="left:22%;top:26%;width:40%;height:38%">
+      <div class="dimtag"><span>1180 × 744</span><em>·</em><span style="color:var(--action)">−1 px</span></div>
+      ${["tl","tr","bl","br"].map(p=>`<span class="hh ${p}"></span>`).join("")}</div>
+    <div class="ohint"><span><kbd class="k">←→↑↓</kbd> 1 px</span><span><kbd class="k">⇧</kbd>+ok 10 px</span><span><kbd class="k">⏎</kbd> onayla</span></div>`,
+  "window-hover":()=>`<div class="veil"></div>
+    <div class="osnap" style="left:18%;top:22%;width:48%;height:46%"></div>
+    <div class="olabel" style="left:18%;top:calc(22% - 34px)">${ic("window")}<span>Safari — Ödeme</span><span class="mono">1440 × 900</span></div>
+    <div class="ohint"><span>Tıkla ve yakala</span><span><kbd class="k">Space</kbd> bölge moduna dön</span></div>`,
+  "full-pick":()=>`<div class="veil"></div>
+    <div class="osnap" style="left:8%;top:20%;width:50%;height:52%"></div>
+    <div class="olabel" style="left:8%;top:calc(20% - 34px)">${ic("monitor")}<span>Ekran 1 — dahili</span><span class="mono">3024 × 1964 @2×</span></div>
+    <div class="osnap" style="left:62%;top:26%;width:30%;height:34%;background:none;border-style:dashed;opacity:.55"></div>
+    <div class="olabel" style="left:62%;top:calc(26% - 34px);opacity:.6">${ic("monitor")}<span>Ekran 2</span><span class="mono">2560 × 1440 @1×</span></div>`,
+  "dpi":()=>`<div class="veil"></div>
+    <div class="osnap" style="left:8%;top:18%;width:44%;height:44%"></div>
+    <div class="olabel" style="left:8%;top:calc(18% - 34px)">${ic("monitor")}<span>Ekran 1</span><span class="mono">@2×</span></div>
+    <div class="osnap" style="left:56%;top:24%;width:36%;height:30%"></div>
+    <div class="olabel" style="left:56%;top:calc(24% - 34px)">${ic("monitor")}<span>Ekran 2</span><span class="mono">@1.25×</span></div>
+    <div class="ohint" style="border-color:rgba(217,160,54,.4)">${ic("alert")}<span>Farklı ölçekli ekranlar — seçim fiziksel piksele hizalanıyor</span></div>`,
+  "scroll":()=>`<div class="veil"></div>
+    <div class="sel" style="left:26%;top:14%;width:34%;height:64%">
+      <div class="dimtag"><span>1180 × 3480</span><em>·</em><span style="color:var(--action)">7 kare birleşti</span></div>
+      ${["tl","tr","bl","br"].map(p=>`<span class="hh ${p}"></span>`).join("")}</div>
+    <div class="ohint"><span>${ic("scroll")}Kaydırmaya devam et</span><span><kbd class="k">⏎</kbd> bitir</span></div>`,
+  "timer":()=>`<div class="veil"></div><div class="countdown">3</div>
+    <div class="ohint"><span>Zamanlayıcı — menüleri açık bırakabilirsin</span><span><kbd class="k">Esc</kbd> iptal</span></div>`,
+  "rec-area":()=>`<div class="veil"></div>
+    <div class="sel" style="left:16%;top:20%;width:52%;height:48%;border-style:dashed">
+      <div class="dimtag"><span>1920 × 1080</span><em>·</em><span>60 fps</span></div>
+      ${["tl","tr","bl","br"].map(p=>`<span class="hh ${p}"></span>`).join("")}</div>
+    <div class="recbar"><span class="badge b-act"><span class="dot"></span>Hazır</span>
+      <div class="seg"><button class="on">Video</button><button>GIF</button></div>
+      <button class="btn btn-pri sm" data-scn="cap-rec-live">${ic("rec")}Kaydı başlat</button></div>`,
+  "rec-live":()=>`<div class="veil" style="background:rgba(8,6,5,.3)"></div>
+    <div class="sel" style="left:16%;top:20%;width:52%;height:48%;box-shadow:0 0 0 9999px rgba(8,6,5,.28)">
+      ${["tl","tr","bl","br"].map(p=>`<span class="hh ${p}"></span>`).join("")}</div>
+    <div class="recbar"><span class="badge b-bad"><span class="dot"></span>KAYIT</span>
+      <span class="t">00:07</span>
+      <button class="btn btn-gho icon sm">${ic("pause")}</button>
+      <button class="btn btn-pri sm" data-scn="ed-tool-num">${ic("stop")}Bitir</button></div>`,
+  "rec-pause":()=>`<div class="veil" style="background:rgba(8,6,5,.45)"></div>
+    <div class="sel" style="left:16%;top:20%;width:52%;height:48%;border-color:var(--warn);box-shadow:0 0 0 9999px rgba(8,6,5,.45)">
+      ${["tl","tr","bl","br"].map(p=>`<span class="hh ${p}" style="background:var(--warn)"></span>`).join("")}</div>
+    <div class="recbar"><span class="badge b-warn"><span class="dot"></span>DURAKLATILDI</span>
+      <span class="t">00:24</span>
+      <button class="btn btn-pri sm">${ic("play")}Devam</button>
+      <button class="btn btn-sec sm">${ic("stop")}Bitir</button></div>`
+};
+function renderOvl(){
+  const o=$("#ovlay"); o.classList.toggle("on",!!S.ovl);
+  $("#stage").classList.toggle("dim",!!S.ovl);
+  o.innerHTML = S.ovl ? (OVL[S.ovl.k]?OVL[S.ovl.k](S.ovl):"") : "";
+}
+
+/* ---------------- library ---------------- */
+function renderLib(){
+  const b=$("#lib-body"); b.innerHTML="";
+  $("#lib-seg").querySelectorAll("button").forEach(x=>x.classList.toggle("on",x.dataset.lv===S.libView));
+  const st=S.libState;
+  if(st==="empty"){
+    b.append(h("div",{class:"empty",html:
+      `<span class="chip">${ic("image")}</span><h3>Henüz çekim yok</h3>
+       <p>İlk çekimini al — kütüphane burada dolacak. Çekimler <span class="mono">Belgeler/FoxShot</span> altına kaydediliyor.</p>`},
+      h("button",{class:"btn btn-pri","data-scn":"cap-region-idle",html:ic("region")+"Bölge yakala"})));
+    $("#lib-sub").textContent="0 çekim · Belgeler/FoxShot"; return;
+  }
+  $("#lib-sub").textContent="142 çekim · 2,1 GB · Belgeler/FoxShot";
+  if(st==="loading"){
+    b.append(h("div",{class:"grid"},...Array.from({length:6},()=>h("div",{class:"skel",style:"aspect-ratio:16/10;border-radius:12px"}))));
+    $("#lib-sub").textContent="Taranıyor…"; return;
+  }
+  if(st==="notfound"){
+    b.append(h("div",{style:"padding:10px 0 14px"},h("input",{class:"field mono",value:"pixel-ratio",style:"max-width:280px"})));
+    b.append(h("div",{class:"empty",html:`<span class="chip">${ic("search")}</span><h3>Sonuç yok</h3>
+      <p><span class="mono">pixel-ratio</span> ile eşleşen çekim bulunamadı. Dosya adı, künye numarası veya bulgu metni ile arayabilirsin.</p>`}));
+    return;
+  }
+  if(st==="search"){
+    b.append(h("div",{style:"padding:10px 0 14px;display:flex;gap:8px;align-items:center"},
+      h("input",{class:"field mono",value:"checkout",style:"max-width:280px"}),
+      h("span",{class:"badge b-mut"},"3 sonuç")));
+  }
+  if(st==="filters"){
+    b.append(h("div",{style:"padding:8px 0 14px;display:flex;gap:7px;flex-wrap:wrap"},
+      ...[["Görsel",1],["Video",0],["Yüklendi",1],["Bu hafta",1],["Yerel",0]].map(([t,on])=>
+        h("button",{class:"badge "+(on?"b-act":"b-mut")},t))));
+  }
+  const items = st==="search" ? CAPS.slice(0,3) : CAPS;
+  if(S.libView==="grid"){
+    const g=h("div",{class:"grid"});
+    items.forEach((c,i)=>{
+      const on = (st==="selected"&&i===0) || (st==="multi"&&i<3);
+      g.append(h("button",{class:"plate"+(on?" sel":""),"data-scn":"lib-selected",html:
+        `<span class="im"><svg viewBox="0 0 320 200"><use href="#i-${c.pic}"/></svg></span>
+         <span class="mt"><span class="nm">${c.id}</span>
+         <span class="rr">${c.up?`<span class="badge b-ok"><span class="dot"></span>Link</span>`:`<span class="badge b-mut">Yerel</span>`}</span></span>`}));
+    });
+    b.append(g);
+  } else {
+    const r=h("div",{class:"rows"});
+    items.forEach((c,i)=>{
+      const on=(st==="selected"&&i===0);
+      r.append(h("button",{class:"row"+(on?" sel":""),"data-scn":"lib-selected",html:
+        `<span class="chip sm">${ic("image")}</span>
+         <span><span class="nm">${c.name}</span><span class="sb mono">${c.id} · ${c.dim} · ${c.size}</span></span>
+         <span class="rr"><span class="mono" style="color:var(--ink-4);font-size:11.5px">${c.t}</span>
+         ${c.up?`<span class="badge b-ok"><span class="dot"></span>${c.url}</span>`:`<span class="badge b-mut">Yerel</span>`}
+         ${ic("cright","")}</span>`}));
+    });
+    b.append(r);
+  }
+  if(st==="selected"){
+    const c=CAPS[0];
+    b.append(h("div",{class:"card",style:"margin-top:14px;padding:15px",html:
+      `<div style="display:flex;gap:14px;align-items:flex-start">
+        <div style="flex:0 0 150px;border-radius:9px;overflow:hidden;border:1px solid var(--border)">
+          <svg viewBox="0 0 320 200" style="width:100%;display:block"><use href="#i-${c.pic}"/></svg></div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:500;font-size:15px">${c.name}</div>
+          <div class="mono" style="color:var(--ink-3);margin-top:5px;font-size:12px">${c.id} · ${c.dim} · ${c.size} · ${c.t}</div>
+          <div style="display:flex;gap:7px;margin-top:12px;flex-wrap:wrap">
+            <button class="btn btn-pri sm" data-scn="ed-tool-num">${ic("pen")}Düzenle</button>
+            <button class="btn btn-sec sm">${ic("copy")}Linki kopyala</button>
+            <button class="btn btn-gho sm">${ic("folder")}Klasörde göster</button>
+            <button class="btn btn-gho sm" data-scn="lib-delete">${ic("trash")}Sil</button>
+          </div>
+        </div></div>`}));
+  }
+  if(st==="delete"){
+    b.append(h("div",{class:"card",style:"margin-top:14px;padding:15px;border-color:rgba(224,87,76,.32)",html:
+      `<div style="display:flex;gap:12px;align-items:flex-start">
+        <span class="chip" style="background:var(--bad-tint);border-color:rgba(224,87,76,.3);color:var(--bad)">${ic("trash")}</span>
+        <div style="flex:1"><div style="font-weight:500;font-size:14.5px">3 çekim silinsin mi?</div>
+        <p style="font-size:13px;color:var(--ink-3);margin-top:4px;line-height:1.55;max-width:58ch">Dosyalar diskten kalkar. Yüklenmiş kopyalar ve linkler etkilenmez — onları hedefin panelinden silmen gerekir.</p>
+        <div style="display:flex;gap:7px;margin-top:12px"><button class="btn btn-dan sm">Sil</button>
+        <button class="btn btn-gho sm" data-scn="lib-multi">Vazgeç</button></div></div></div>`}));
+  }
+  if(st==="missing"){
+    b.append(h("div",{class:"card",style:"margin-top:14px;padding:14px;border-color:rgba(217,160,54,.3)",html:
+      `<div style="display:flex;gap:12px;align-items:center">
+        <span class="chip" style="background:var(--warn-tint);border-color:rgba(217,160,54,.3);color:var(--warn)">${ic("alert")}</span>
+        <div style="flex:1"><div style="font-weight:500;font-size:14px">4 çekimin dosyası bulunamadı</div>
+        <div style="font-size:12.5px;color:var(--ink-3);margin-top:3px">Klasör taşınmış olabilir. Kayıtları yeni konuma bağla veya kütüphaneden kaldır.</div></div>
+        <button class="btn btn-sec sm">Konumu bul</button></div>`}));
+  }
+}
+
+/* ---------------- editor ---------------- */
+function renderEd(){
+  const tw=$("#ed-tools"); tw.innerHTML="";
+  TOOLS.forEach(t=>{
+    if(t[0]==="sep"){ tw.append(h("div",{class:"tsep"})); return; }
+    const [k,label,key]=t;
+    tw.append(h("button",{class:"tool"+(S.edTool===k?" on":""),title:label+"  "+key,"data-tool":k,
+      html:ic(k)+`<span class="kk">${key}</span>`}));
+  });
+  const cur = TOOLS.find(t=>t[0]===S.edTool)||["cursor","Seç","V"];
+  const ob=$("#ed-opt"); ob.innerHTML="";
+  const opt = {
+    num:`<span class="lab">Numara</span><div class="widths"><span class="badge b-act">Sıradaki 3</span></div><span class="lab" style="margin-left:6px">Renk</span>`,
+    text:`<span class="lab">Yazı</span><div class="seg"><button class="on">15</button><button>19</button><button>24</button></div><span class="lab" style="margin-left:6px">Renk</span>`,
+    blur:`<span class="lab">Yoğunluk</span><div class="seg"><button>Az</button><button class="on">Orta</button><button>Çok</button></div>`,
+    pixel:`<span class="lab">Blok</span><div class="seg"><button>4</button><button class="on">8</button><button>16</button></div>`,
+    crop:`<span class="lab">Oran</span><div class="seg"><button class="on">Serbest</button><button>16:9</button><button>1:1</button></div>`,
+    spot:`<span class="lab">Karartma</span><div class="seg"><button>%40</button><button class="on">%65</button><button>%85</button></div>`
+  }[S.edTool] || `<span class="lab">${cur[1]}</span><div class="widths">${[2,3,5].map((w,i)=>`<button class="wd${i===1?" on":""}"><i style="width:14px;height:${w}px"></i></button>`).join("")}</div><span class="lab" style="margin-left:6px">Renk</span>`;
+  ob.innerHTML = opt + (["blur","pixel","crop","spot"].includes(S.edTool)?"":
+    `<div class="swatches">${INKS.map((c,i)=>`<button class="sw${i===0?" on":""}" style="background:${c}" aria-label="renk"></button>`).join("")}</div>`)+
+    `<div style="margin-left:auto;display:flex;gap:4px;align-items:center">
+       <button class="btn btn-gho icon sm" title="Geri al">${ic("undo")}</button>
+       <button class="btn btn-gho icon sm dis" title="Yinele">${ic("redo")}</button>
+       <span class="mono" style="color:var(--ink-4);font-size:11px;margin-left:6px">%100</span></div>`;
+
+  $("#ed-shot").querySelector("svg.pic use").setAttribute("href","#i-"+S.edPic);
+
+  /* marks */
+  const m=$("#ed-marks"); const n=S.edFinds;
+  const marks=[
+    `<circle cx="62" cy="46" r="9" fill="#FF6A3D"/><text x="62" y="50" font-family="Roboto Mono,monospace" font-size="10" font-weight="500" fill="#1A0C05" text-anchor="middle">1</text>`,
+    `<rect x="150" y="112" width="128" height="46" rx="4" fill="none" stroke="#E0574C" stroke-width="2.5"/><circle cx="150" cy="112" r="9" fill="#FF6A3D"/><text x="150" y="116" font-family="Roboto Mono,monospace" font-size="10" font-weight="500" fill="#1A0C05" text-anchor="middle">2</text>`,
+    `<path d="M240 40 L200 74" stroke="#D9A036" stroke-width="2.5" stroke-linecap="round" marker-end="url(#ah)"/><circle cx="246" cy="34" r="9" fill="#FF6A3D"/><text x="246" y="38" font-family="Roboto Mono,monospace" font-size="10" font-weight="500" fill="#1A0C05" text-anchor="middle">3</text>`
+  ];
+  m.innerHTML = `<svg viewBox="0 0 320 200" preserveAspectRatio="none">
+    <defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#D9A036"/></marker></defs>
+    ${marks.slice(0,n).join("")}
+    ${S.edState==="text"?`<rect x="46" y="150" width="112" height="22" rx="3" fill="rgba(255,106,61,.14)" stroke="#FF6A3D" stroke-width="1.5"/><text x="53" y="165" font-family="Roboto" font-size="11" fill="#F7EFE6">buton tepki vermiyor</text><rect x="152" y="153" width="1.6" height="16" fill="#FF6A3D"/>`:""}
+    ${S.edState==="crop"?`<rect x="0" y="0" width="320" height="200" fill="rgba(8,6,5,.55)"/><rect x="34" y="24" width="240" height="150" fill="none" stroke="#FF6A3D" stroke-width="1.5"/><g fill="#FF6A3D">${[[34,24],[274,24],[34,174],[274,174]].map(([x,y])=>`<rect x="${x-4}" y="${y-4}" width="8" height="8"/>`).join("")}</g><path d="M114 24V174M194 24V174M34 74H274M34 124H274" stroke="rgba(255,106,61,.35)" stroke-width=".8"/>`:""}
+    ${S.edState==="blurdemo"?`<g><rect x="150" y="112" width="128" height="46" rx="4" fill="#7B6B5B" opacity=".95"/><g fill="#5C4F43">${Array.from({length:24},(_,i)=>`<rect x="${152+(i%8)*16}" y="${114+Math.floor(i/8)*15}" width="14" height="13" opacity="${.3+((i*7)%5)/10}"/>`).join("")}</g></g>`:""}
+  </svg>`;
+
+  /* findings */
+  const f=$("#ed-finds"); f.innerHTML="";
+  const FL=[["1","Buton tıklamaya tepki vermiyor","x 62 y 46"],["2","Toplam tutar KDV'siz","x 150 y 112"],["3","Hata mesajı görünmüyor","x 246 y 34"]];
+  if(!n){
+    f.append(h("div",{style:"padding:16px 6px;text-align:center;font-size:12px;color:var(--ink-4);line-height:1.55"},
+      "Bir işaret koy — burada satırı yazılır."));
+  } else FL.slice(0,n).forEach(([num,tx,co])=>{
+    f.append(h("button",{class:"find",html:`<span class="num">${num}</span>
+      <span><span class="tx">${tx}</span><span class="co">${co}</span></span>
+      <span class="x">${ic("x")}</span>`}));
+  });
+  $("#ed-side-n").textContent = n;
+  $("#ed-side-t").textContent = S.edState==="effects" ? "Efektler" : "Bulgular";
+  if(S.edState==="effects"){
+    f.innerHTML="";
+    [["Ayarlar",["Parlaklık","Kontrast","Doygunluk","Ton"]],["Filtreler",["Siyah-beyaz","Sepya","Keskinlik","Gürültü"]],
+     ["Değişimler",["Gölge","Kenarlık","Yuvarlat","Döndür"]]].forEach(([g,xs])=>{
+      f.append(h("div",{class:"ovl",style:"padding:8px 4px 4px"},g));
+      xs.forEach(x=>f.append(h("button",{class:"find",html:`<span class="chip sm">${ic("palette")}</span><span><span class="tx">${x}</span></span>`})));
+    });
+  }
+  const ft=$("#ed-foot"); ft.innerHTML="";
+  if(S.edState==="unsaved"){
+    ft.append(h("div",{class:"pnote",style:"margin:0 0 4px",html:ic("alert")+"<p><b>Kaydedilmedi</b> — 3 işaret bekliyor.</p>"}));
+  }
+  ft.append(h("button",{class:"btn btn-pri wide","data-scn":"up-progress",html:ic("upload")+"Yükle ve linki kopyala"}));
+  ft.append(h("div",{style:"display:flex;gap:6px"},
+    h("button",{class:"btn btn-sec sm",style:"flex:1","data-scn":"lib-grid",html:ic("save")+"Kaydet"}),
+    h("button",{class:"btn btn-sec sm",style:"flex:1",html:ic("copy")+"Kopyala"})));
+}
+
+/* ---------------- modules ---------------- */
+const MODS = {
+  core:[["Core","mods","0.4.1","Yakalama hattı, annotation modeli, modül kayıt defteri","ok"]],
+  plat:[["macOS adaptörü","apple","0.4.1","ScreenCaptureKit · TCC izinleri · NSPasteboard","ok"],
+        ["Linux adaptörü","linux","0.4.0","X11 + Wayland portal · wl-clipboard","ok"],
+        ["Windows adaptörü","win","0.2.6","Graphics Capture · henüz geliştirmede","wip"]],
+  feat:[["Editör","pen","0.4.1","17 annotation aracı, 40+ efekt","ok"],
+        ["Yükleme","upload","0.3.8","Cloudflare R2, Amazon S3, ücretsiz servisler","ok"],
+        ["Video","video","0.2.2","Ekran kaydı ve GIF","ok"],
+        ["OCR","ocr","—","Görselden metin okuma","none"],
+        ["QR","qr","—","Kod okuma ve üretme","none"]]
+};
+function modRow(m,extra){
+  const [nm,icn,ver,desc,st]=m;
+  const badge = st==="none"?`<span class="badge b-mut">Kurulu değil</span>`
+    : st==="wip"?`<span class="badge b-warn"><span class="dot"></span>Geliştirmede</span>`
+    : `<span class="badge b-ok"><span class="dot"></span>Güncel</span>`;
+  return `<div class="mod ${nm==="Core"?"core":""}">
+    <span class="chip ${nm==="Core"?"act":""}">${ic(icn)}</span>
+    <span style="flex:1;min-width:0"><span class="nm">${nm}</span>
+      <span class="ver">${ver==="—"?"kurulu değil":"v"+ver} · ${desc}</span></span>
+    <span class="rr">${extra||badge}</span></div>`;
+}
+function renderMod(){
+  const b=$("#mod-body"); b.innerHTML=""; const st=S.modState;
+  $("#mod-actions").innerHTML = st==="offline"
+    ? `<span class="badge b-warn">${ic("wifioff")}Çevrimdışı</span>`
+    : `<div class="seg"><button class="on">Kararlı</button><button>Beta</button></div>
+       <button class="btn btn-sec sm" data-scn="mod-update-avail">${ic("refresh")}Güncelleme ara</button>`;
+
+  if(st==="offline"){
+    b.append(h("div",{class:"pnote",style:"margin:0 0 14px",html:ic("wifioff")+
+      "<p><b>Güncelleme sunucusuna ulaşılamıyor.</b> Kurulu modüller çalışmaya devam eder; sürüm listesi son bilinen durumu gösteriyor.</p>"}));
+  }
+  if(st==="corerestart"){
+    b.append(h("div",{class:"pnote act",style:"margin:0 0 14px",html:ic("info")+
+      "<p><b>Core 0.5.0 hazır.</b> Core güncellemesi üç platformu da etkiler ve yeniden başlatma gerektirir. Modüller olduğu gibi kalır.</p>"+
+      `<button class="btn btn-pri sm" style="flex:0 0 auto;margin-left:auto">Yeniden başlat</button>`}));
+  }
+  if(st==="signature"){
+    b.append(h("div",{class:"pnote bad",style:"margin:0 0 14px",html:ic("shield")+
+      "<p><b>İmza doğrulanamadı — Video 0.2.3 kurulmadı.</b> İndirilen paketin imzası beklenen anahtarla eşleşmiyor. Kurulu 0.2.2 sürümü korundu.</p>"+
+      `<button class="btn btn-sec sm" style="flex:0 0 auto;margin-left:auto">Ayrıntı</button>`}));
+  }
+  if(st==="incompat"){
+    b.append(h("div",{class:"pnote",style:"margin:0 0 14px",html:ic("alert")+
+      "<p><b>OCR 0.3.0, Core 0.4.1 ile uyumsuz.</b> En az Core 0.5.0 gerekiyor. Core'u güncelleyince kurulabilir hale gelir.</p>"}));
+  }
+
+  b.append(h("div",{class:"modgrp",html:`<b>Çekirdek</b><span>üç platformun ortak davranışı</span>`}));
+  b.append(h("div",{class:"modlist",html:MODS.core.map(m=>modRow(m,
+    st==="corerestart"?`<span class="badge b-act"><span class="dot"></span>0.5.0 hazır</span><button class="btn btn-pri sm">Kur</button>`:null)).join("")}));
+
+  b.append(h("div",{class:"modgrp",html:`<b>Platform adaptörleri</b><span>Core'a bağlanır — görünüm ve uyumluluk</span>`}));
+  b.append(h("div",{class:"modlist",html:MODS.plat.map(m=>modRow(m)).join("")}));
+
+  b.append(h("div",{class:"modgrp",html:`<b>Özellik modülleri</b><span>bağımsız sürüm, bağımsız güncelleme</span>`}));
+  const feat = MODS.feat.map(m=>{
+    const nm=m[0];
+    if(st==="mod-update"&&nm==="Yükleme")
+      return modRow(m,`<span class="badge b-act"><span class="dot"></span>0.4.0 var</span><button class="btn btn-pri sm" data-scn="mod-updating">Güncelle</button>`);
+    if(st==="updating"&&nm==="Yükleme")
+      return `<div class="mod"><span class="chip act">${ic("upload")}</span>
+        <span style="flex:1;min-width:0"><span class="nm">Yükleme</span>
+        <span class="ver">v0.3.8 → 0.4.0 · 4,2 MB / 6,1 MB</span>
+        <span class="bar" style="margin-top:7px"><i style="width:68%"></i></span></span>
+        <span class="rr"><span class="mono" style="font-size:11.5px;color:var(--ink-3)">%68</span>
+        <button class="btn btn-gho icon sm">${ic("x")}</button></span></div>`;
+    if(st==="updated"&&nm==="Yükleme")
+      return modRow([nm,m[1],"0.4.0",m[3],"ok"],`<span class="badge b-ok"><span class="dot"></span>0.4.0 kuruldu</span><button class="btn btn-gho sm" data-scn="mod-versions">Geçmiş</button>`);
+    if(st==="failed"&&nm==="Yükleme")
+      return `<div class="mod" style="border-color:rgba(224,87,76,.32)"><span class="chip" style="background:var(--bad-tint);border-color:rgba(224,87,76,.3);color:var(--bad)">${ic("upload")}</span>
+        <span style="flex:1;min-width:0"><span class="nm">Yükleme</span>
+        <span class="ver" style="color:var(--bad)">0.4.0 kurulamadı — indirme yarıda kesildi. v0.3.8 çalışmaya devam ediyor.</span></span>
+        <span class="rr"><button class="btn btn-sec sm">${ic("refresh")}Tekrar dene</button></span></div>`;
+    if(st==="installing"&&nm==="OCR")
+      return `<div class="mod"><span class="chip act">${ic("ocr")}</span>
+        <span style="flex:1;min-width:0"><span class="nm">OCR</span><span class="ver">kuruluyor · 12,4 MB</span>
+        <span class="bar" style="margin-top:7px"><i style="width:34%"></i></span></span>
+        <span class="rr"><span class="mono" style="font-size:11.5px;color:var(--ink-3)">%34</span></span></div>`;
+    if(nm==="OCR"&&st==="notinstalled")
+      return modRow(m,`<button class="btn btn-pri sm" data-scn="mod-installing">${ic("download")}Kur</button>`);
+    if(m[4]==="none") return modRow(m,`<button class="btn btn-sec sm" data-scn="mod-installing">${ic("download")}Kur</button>`);
+    return modRow(m,null);
+  });
+  b.append(h("div",{class:"modlist",html:feat.join("")}));
+
+  if(st==="detail"||st==="mod-update"){
+    b.append(h("div",{class:"card",style:"padding:15px",html:
+      `<div style="display:flex;align-items:center;gap:12px">
+        <span class="chip act">${ic("upload")}</span>
+        <div style="flex:1"><div style="font-weight:500;font-size:15px">Yükleme modülü</div>
+        <div class="mono" style="font-size:11.5px;color:var(--ink-4);margin-top:3px">v0.3.8 → 0.4.0 · 6,1 MB · Core 0.4.0+ gerekir</div></div>
+        <button class="btn btn-pri sm" data-scn="mod-updating">Güncelle</button></div>
+      <div class="chlog"><div class="ovl" style="margin-bottom:6px">0.4.0 değişiklikleri</div>
+        <ul style="margin:0;padding:0;list-style:disc">
+          <li>Cloudflare R2 için çoklu hesap desteği</li>
+          <li>Kesintiden sonra yüklemeye kaldığı yerden devam</li>
+          <li>Büyük dosyalarda parçalı yükleme</li>
+          <li>Hata mesajları artık hangi kimlik bilgisinin hatalı olduğunu söylüyor</li>
+        </ul></div>`}));
+  }
+  if(st==="versions"){
+    b.append(h("div",{class:"card",style:"padding:15px",html:
+      `<div style="font-weight:500;font-size:14.5px;margin-bottom:11px">Yükleme — sürüm geçmişi</div>
+       <div class="rows">${[["0.4.0","şimdi","aktif"],["0.3.8","6 gün önce",""],["0.3.7","3 hafta önce",""],["0.3.5","2 ay önce",""]]
+        .map(([v,t,a])=>`<div class="row"><span class="chip sm">${ic("mods")}</span>
+          <span><span class="nm mono">v${v}</span><span class="sb">${t}</span></span>
+          <span class="rr">${a?`<span class="badge b-ok"><span class="dot"></span>aktif</span>`:`<button class="btn btn-sec sm">Bu sürüme dön</button>`}</span></div>`).join("")}</div>`}));
+  }
+  if(st==="remove"){
+    b.append(h("div",{class:"card",style:"padding:15px;border-color:rgba(224,87,76,.32)",html:
+      `<div style="font-weight:500;font-size:14.5px">Video modülü kaldırılsın mı?</div>
+       <p style="font-size:13px;color:var(--ink-3);margin-top:5px;line-height:1.55;max-width:60ch">Ekran kaydı ve GIF devre dışı kalır, kısayolları boşa düşer. Çekilmiş videolar kütüphanede kalır. Modülü sonra tekrar kurabilirsin.</p>
+       <div style="display:flex;gap:7px;margin-top:12px"><button class="btn btn-dan sm">Kaldır</button>
+       <button class="btn btn-gho sm" data-scn="mod-list">Vazgeç</button></div>`}));
+  }
+  if(st==="auto"){
+    b.append(h("div",{class:"set",html:
+      [["Modülleri otomatik güncelle","Yeni sürümler arka planda kurulur; Core hariç.",1],
+       ["Core güncellemelerini sor","Core değişimi üç platformu etkiler, onay isteyelim.",1],
+       ["Beta kanalı","Erken sürümler. Kırılabilir.",0]]
+      .map(([n,s,on])=>`<div class="it"><div style="flex:1"><div class="nm">${n}</div><div class="sb">${s}</div></div>
+        <div class="rr"><button class="sw-t ${on?"on":""}"><i></i></button></div></div>`).join("")}));
+  }
+}
+
+/* ---------------- settings ---------------- */
+const SETPANES = {
+  general:["Genel",()=>`
+    <div class="set">
+      ${sw("Oturum açınca başlat","FoxShot menü çubuğunda sessizce açılır",1)}
+      ${sw("Çekimden sonra editörü aç","Kapalıysa doğrudan varsayılan eyleme gider",1)}
+      ${sw("Çekim sesi","",0)}
+      ${row("Varsayılan eylem","Çekim biter bitmez ne olsun",`<div class="seg"><button class="on">Yükle</button><button>Kaydet</button><button>Kopyala</button></div>`)}
+    </div>
+    <div class="modgrp"><b>Kaydetme</b><span>çekimler nereye gitsin</span></div>
+    <div class="set">
+      ${row("Klasör","Varsayılan olarak Belgeler altında",`<span class="mono" style="font-size:12px;color:var(--ink-2)">~/Belgeler/FoxShot</span><button class="btn btn-sec sm">Değiştir</button>`)}
+      ${row("Dosya adı","Şablon",`<span class="mono" style="font-size:12px;color:var(--ink-2)">{tarih}-{saat}-{id}</span>`)}
+      ${sw("Yıla göre alt klasör","2026/08/ biçiminde ayır",1)}
+    </div>`],
+  hotkeys:["Kısayollar",()=>`
+    <div class="set">
+      ${[["Bölge seç","⇧4"],["Pencere","⇧5"],["Tam ekran","⇧3"],["Son bölgeyi tekrarla","⇧7"],["Ekranı kaydet","⇧6"],["Panel","⇧Space"]]
+      .map(([n,k])=>`<div class="it"><div style="flex:1"><div class="nm">${n}</div></div>
+        <div class="rr"><kbd class="k">${OS[S.os].mod}${k}</kbd><button class="btn btn-gho sm">Değiştir</button></div></div>`).join("")}
+    </div>
+    ${S.setPane==="hotkeys"?"":""}`],
+  paths:["Hedefler",()=>""],
+  privacy:["İzinler",()=>`
+    <div class="set">
+      ${row(OS[S.os].perm,"Ekran içeriğini okumak için zorunlu",`<span class="badge b-ok"><span class="dot"></span>Verildi</span>`)}
+      ${row("Erişilebilirlik","Global kısayolların çalışması için",`<span class="badge b-ok"><span class="dot"></span>Verildi</span>`)}
+      ${row("Pano","Görsel ve link kopyalamak için",`<span class="badge b-ok"><span class="dot"></span>Verildi</span>`)}
+    </div>
+    <div class="pnote" style="margin:0">${ic("info")}<p><b>${OS[S.os].note}</b> — imzasız bir sürüm güncellendiğinde işletim sistemi izinleri sıfırlayabilir. FoxShot bunu açılışta kontrol eder ve gerekirse tekrar sorar.</p></div>`],
+  about:["Hakkında",()=>`
+    <div class="card" style="padding:18px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:13px">
+        <span class="chip act" style="width:44px;height:44px;flex-basis:44px;border-radius:13px">${ic("fox")}</span>
+        <div><div style="font-weight:700;font-size:18px;letter-spacing:-.02em">FoxShot</div>
+        <div class="mono" style="font-size:12px;color:var(--ink-3);margin-top:3px">0.4.1 · Core 0.4.1 · ${OS[S.os].n} adaptörü</div></div>
+      </div>
+      <hr class="hr" style="margin:15px 0">
+      <div style="font-size:13.5px;line-height:1.65;color:var(--ink-2);max-width:64ch">
+        Metanetsoft tarafından geliştirilir. Kaynak kodu herkese açıktır; okuyabilir, kullanabilir ve değiştirebilirsin.
+        Ticari satış hakkı Metanetsoft'a aittir.
+      </div>
+      <div style="display:flex;gap:7px;margin-top:14px">
+        <button class="btn btn-sec sm">${ic("link")}Kaynak kodu</button>
+        <button class="btn btn-gho sm">Lisans metni</button>
+      </div>
+    </div>`]
+};
+const sw=(n,s,on)=>`<div class="it"><div style="flex:1"><div class="nm">${n}</div>${s?`<div class="sb">${s}</div>`:""}</div><div class="rr"><button class="sw-t ${on?"on":""}"><i></i></button></div></div>`;
+const row=(n,s,r)=>`<div class="it"><div style="flex:1"><div class="nm">${n}</div>${s?`<div class="sb">${s}</div>`:""}</div><div class="rr">${r}</div></div>`;
+
+function renderSet(){
+  const b=$("#set-body"); b.innerHTML="";
+  const p = SETPANES[S.setPane] || SETPANES.general;
+  $("#set-sub").textContent = p[0];
+  $("#set-actions").innerHTML = `<div class="seg">${Object.entries(SETPANES).filter(([k])=>SETPANES[k][1]().length||k==="paths")
+    .map(([k,v])=>`<button class="${k===S.setPane?"on":""}" data-set="${k}">${v[0]}</button>`).join("")}</div>`;
+  if(S.setPane==="hotkeys"&&S.hkConflict){
+    b.append(h("div",{class:"pnote bad",style:"margin:0 0 14px",html:ic("alert")+
+      `<p><b>${OS[S.os].mod}⇧4 başka bir uygulamada kullanılıyor.</b> ${S.os==="mac"?"Sistem ekran görüntüsü aracı":"Masaüstü ortamı"} bu kombinasyonu almış. Farklı bir kısayol seç ya da oradaki atamayı kaldır.</p>`}));
+  }
+  if(S.setPane==="hotkeys"&&S.hkFocus){
+    b.append(h("div",{class:"pnote",style:"margin:0 0 14px",html:ic("kbd")+
+      "<p><b>Kısayollar yalnızca FoxShot öndeyken çalışıyor.</b> Wayland global kısayol portalı bulunamadı, X11 yedeğine düşüldü. Paketlenmiş kurulum bunu çözer.</p>"}));
+  }
+  if(S.setPane==="paths"){
+    renderUpInto(b,"embedded"); return;
+  }
+  b.insertAdjacentHTML("beforeend",p[1]());
+}
+
+/* ---------------- upload / destinations ---------------- */
+const DESTS=[["Cloudflare R2","cloud","Kendi bucket'ın · özel alan adı",1],
+             ["Amazon S3","cloud","Bölge ve bucket senin",0],
+             ["Ücretsiz servisler","globe","Hesap gerekmez · link süreli",0],
+             ["Yalnızca diske kaydet","folder","Hiçbir yere gönderilmez",0]];
+function renderUpInto(b,mode){
+  const st = mode==="embedded" ? "list" : S.upState;
+  if(st==="list"||st==="accounts"){
+    b.insertAdjacentHTML("beforeend",`<div class="rows" style="margin-bottom:16px">${DESTS.map(([n,i,s,on])=>
+      `<button class="row ${on?"sel":""}" data-scn="up-r2"><span class="chip ${on?"act":""}">${ic(i==="globe"?"link":i)}</span>
+       <span><span class="nm">${n}</span><span class="sb">${s}</span></span>
+       <span class="rr">${on?`<span class="badge b-act"><span class="dot"></span>Varsayılan</span>`:""}${ic("cright")}</span></button>`).join("")}</div>`);
+  }
+  if(st==="accounts"){
+    b.insertAdjacentHTML("beforeend",`<div class="modgrp"><b>Cloudflare R2 hesapları</b><span>çekim başına hedef seçebilirsin</span></div>
+      <div class="rows">${[["kişisel","fxs.to","varsayılan"],["metanetsoft","cdn.metanetsoft.com",""],["müşteri-a","paylas.musteri-a.com",""]]
+      .map(([n,d,def])=>`<div class="row"><span class="chip sm">${ic("cloud")}</span>
+        <span><span class="nm">${n}</span><span class="sb mono">${d}</span></span>
+        <span class="rr">${def?`<span class="badge b-act">${def}</span>`:`<button class="btn btn-gho sm">Varsayılan yap</button>`}
+        <button class="btn btn-gho icon sm">${ic("trash")}</button></span></div>`).join("")}
+      </div><button class="btn btn-sec sm" style="margin-top:11px">${ic("plus")}Hesap ekle</button>`);
+  }
+  if(st==="r2"||st==="r2-verify"||st==="r2-bad"||st==="r2-ok"){
+    const badge = st==="r2-verify"?`<span class="badge b-mut"><span class="dot"></span>Doğrulanıyor…</span>`
+      : st==="r2-bad"?`<span class="badge b-bad"><span class="dot"></span>Doğrulanamadı</span>`
+      : st==="r2-ok"?`<span class="badge b-ok"><span class="dot"></span>Bağlandı</span>`:"";
+    b.insertAdjacentHTML("beforeend",`<div class="card" style="padding:17px">
+      <div style="display:flex;align-items:center;gap:11px;margin-bottom:15px">
+        <span class="chip act">${ic("cloud")}</span>
+        <div style="flex:1"><div style="font-weight:500;font-size:15px">Cloudflare R2</div>
+        <div class="sb" style="font-size:12.5px;color:var(--ink-3);margin-top:2px">Bucket'ına doğrudan yükler, linki senin alan adından verir</div></div>
+        ${badge}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px">
+        ${[["Hesap kimliği","a1b2c3d4e5f6a7b8c9d0",1],["Bucket","foxshot-paylas",1],
+           ["Erişim anahtarı kimliği","AKIA••••••••••••",1],["Gizli anahtar","••••••••••••••••••••",1],
+           ["Genel alan adı","cdn.metanetsoft.com",1],["Yol öneki","2026/",0]]
+        .map(([l,v],i)=>`<label style="display:block"><span class="ovl" style="display:block;margin-bottom:5px">${l}</span>
+          <input class="field mono ${st==="r2-bad"&&i===3?"bad":""}" value="${v}"></label>`).join("")}
+      </div>
+      ${st==="r2-bad"?`<div class="pnote bad" style="margin:13px 0 0">${ic("alert")}<p><b>Gizli anahtar reddedildi.</b> Cloudflare 403 döndü — anahtar silinmiş ya da bu bucket'a yazma izni yok. R2 panelinden yeni bir anahtar üretip buraya yapıştır.</p></div>`:""}
+      ${st==="r2-ok"?`<div class="pnote" style="margin:13px 0 0;background:var(--ok-tint);border-color:rgba(99,185,140,.3)">${ic("check")}<p style="color:#B6DCC7"><b style="color:var(--ok)">Bağlantı doğrulandı.</b> Test dosyası yazıldı ve silindi. Artık çekimler buraya gidebilir.</p></div>`:""}
+      <div style="display:flex;gap:8px;margin-top:15px">
+        <button class="btn btn-pri" data-scn="${st==="r2"?"up-r2-verify":st==="r2-verify"?"up-r2-ok":"up-list"}">
+          ${st==="r2-verify"?"Doğrulanıyor…":"Bağlantıyı test et"}</button>
+        <button class="btn btn-gho" data-scn="up-accounts">Hesapları yönet</button>
+      </div></div>`);
+  }
+  if(st==="queue"){
+    b.insertAdjacentHTML("beforeend",`<div class="rows">
+      ${[["FS-0834","checkout-hata.png","%68","up"],["FS-0835","panel-uptime.png","sırada","wait"],["FS-0836","cargo-build.png","sırada","wait"]]
+      .map(([id,n,p,k])=>`<div class="row"><span class="chip sm ${k==="up"?"act":""}">${ic("upload")}</span>
+        <span style="flex:1"><span class="nm">${n}</span><span class="sb mono">${id} · Cloudflare R2</span>
+        ${k==="up"?`<span class="bar" style="margin-top:7px;max-width:280px"><i style="width:68%"></i></span>`:""}</span>
+        <span class="rr"><span class="mono" style="font-size:11.5px;color:var(--ink-3)">${p}</span>
+        <button class="btn btn-gho icon sm">${ic("x")}</button></span></div>`).join("")}
+    </div>`);
+  }
+  if(st==="progress"){
+    b.insertAdjacentHTML("beforeend",`<div class="card" style="padding:17px;max-width:520px">
+      <div style="display:flex;gap:13px;align-items:center">
+        <span style="flex:0 0 96px;border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+          <svg viewBox="0 0 320 200" style="width:100%;display:block"><use href="#i-shot-bug"/></svg></span>
+        <div style="flex:1"><div style="font-weight:500;font-size:14.5px">checkout-hata.png</div>
+        <div class="mono" style="font-size:11.5px;color:var(--ink-3);margin-top:3px">412 KB · Cloudflare R2 · 1,8 MB/sn</div>
+        <span class="bar" style="margin-top:9px"><i style="width:72%"></i></span></div>
+        <span class="mono" style="font-size:13px">%72</span></div></div>`);
+  }
+  if(st==="done"){
+    b.insertAdjacentHTML("beforeend",`<div class="card" style="padding:17px;max-width:520px">
+      <div style="display:flex;gap:13px;align-items:center">
+        <span style="flex:0 0 96px;border-radius:8px;overflow:hidden;border:1px solid var(--border)">
+          <svg viewBox="0 0 320 200" style="width:100%;display:block"><use href="#i-shot-bug"/></svg></span>
+        <div style="flex:1"><div style="font-weight:500;font-size:14.5px">Yüklendi</div>
+        <div class="mono" style="font-size:12.5px;color:var(--action);margin-top:4px">cdn.metanetsoft.com/a9Kq2.png</div>
+        <div style="display:flex;gap:6px;margin-top:11px">
+          <button class="btn btn-pri sm">${ic("copy")}Linki kopyala</button>
+          <button class="btn btn-sec sm">${ic("qr")}QR</button>
+          <button class="btn btn-gho sm">${ic("link")}Aç</button></div></div></div></div>`);
+  }
+  const ERR={"err-auth":["Kimlik doğrulanamadı","Cloudflare 403 döndü. Gizli anahtar geçersiz ya da bucket'a yazma izni yok.","Hedefi düzelt","up-r2-bad"],
+             "err-net":["Bağlantı kesildi","Yükleme %41'de durdu. Ağ geri geldiğinde kaldığı yerden devam edebilir.","Devam et","up-progress"],
+             "err-size":["Dosya hedefin sınırını aşıyor","1,2 GB video, ücretsiz servisin 200 MB sınırından büyük. R2 veya S3 bu boyutu kabul eder.","R2'ye gönder","up-progress"]};
+  if(ERR[st]){
+    const [t,d,btn,scn]=ERR[st];
+    b.insertAdjacentHTML("beforeend",`<div class="card" style="padding:17px;max-width:560px;border-color:rgba(224,87,76,.32)">
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <span class="chip" style="background:var(--bad-tint);border-color:rgba(224,87,76,.3);color:var(--bad)">${ic("alert")}</span>
+        <div style="flex:1"><div style="font-weight:500;font-size:14.5px">${t}</div>
+        <p style="font-size:13px;color:var(--ink-3);margin-top:5px;line-height:1.55">${d}</p>
+        <div style="display:flex;gap:7px;margin-top:12px">
+          <button class="btn btn-pri sm" data-scn="${scn}">${btn}</button>
+          <button class="btn btn-gho sm" data-scn="lib-grid">Yalnızca kaydet</button></div></div></div></div>`);
+  }
+}
+function renderUp(){ const b=$("#up-body"); b.innerHTML="";
+  $("#up-actions").innerHTML = `<button class="btn btn-sec sm" data-scn="up-queue">${ic("upload")}Kuyruk</button>`;
+  $("#up-sub").textContent = {list:"Çekimin nereye gideceğini seç",accounts:"Hesaplar",queue:"Kuyruk",progress:"Yükleniyor",done:"Tamamlandı"}[S.upState]||"Cloudflare R2";
+  renderUpInto(b);
+}
+
+/* ---------------- wizard ---------------- */
+const WSTEPS=[
+  {t:"FoxShot'a hoş geldin",p:()=>`Ekranı yakala, üstüne çiz, tek tuşla paylaş. Kurulum üç izin ve bir hedef — bir dakika sürer.`,
+   why:[["region","Bölge, pencere ve tam ekran yakalama"],["pen","Çektiğin anda düzenleme"],["upload","Diske kaydet ya da linke çevir"]],
+   pri:["Başla","wiz-2"],skip:null},
+  {t:()=>OS[S.os].perm+" izni gerekiyor",p:()=>S.os==="mac"
+      ?`macOS, ekran içeriğini okuyan uygulamalara açık izin ister. Bu izin olmadan çekimler yalnızca duvar kağıdını gösterir — sistem sana uyarı vermez, o yüzden şimdi soruyoruz.`
+      :S.os==="linux"?`Wayland, ekran paylaşımını xdg-desktop-portal üzerinden yönetir. Portal olmadan yakalama yapılamaz.`
+      :`Windows Graphics Capture, uygulamanın ekran içeriğine erişmesi için onay ister.`,
+   why:[["eye","Yalnızca sen tetiklediğinde okunur"],["lock","Görseller cihazından çıkmaz — sen yüklemeyi seçmedikçe"],["shield","İzni her an sistem ayarlarından geri alabilirsin"]],
+   dlg:()=>S.os==="mac"?["apple","“FoxShot” ekranınızı kaydetmek istiyor","Bu izni Sistem Ayarları → Gizlilik ve Güvenlik altından değiştirebilirsiniz."]
+        :S.os==="linux"?["linux","Ekranınızı paylaşın","FoxShot ekran içeriğine erişmek istiyor. Hangi ekranı paylaşacağınızı seçin."]
+        :["win","FoxShot ekranınızı yakalasın mı?","Bu uygulama görüntü içeriğinize erişecek."],
+   pri:["İzin ver","wiz-2-ok"],skip:["Şimdilik atla","wiz-3"]},
+  {t:"İzin verildi",p:()=>`Yakalama hazır. ${OS[S.os].n} bu izni hatırlıyor; uygulamayı güncellediğinde tekrar sorabilir.`,
+   why:[["check","Bölge, pencere ve tam ekran çalışır"],["check","Kayıt modülü de bu izni kullanır"]],
+   ok:true,pri:["Devam","wiz-3"],skip:null},
+  {t:"Kısayollar global çalışsın mı?",p:()=>S.os==="mac"
+      ?`Başka bir uygulamada çalışırken ⌘⇧4 basabilmek için Erişilebilirlik izni gerekiyor. Vermezsen kısayollar yalnızca FoxShot öndeyken çalışır.`
+      :`Global kısayollar için masaüstü ortamının kısayol portalı kullanılır. Yoksa kısayollar yalnızca FoxShot öndeyken çalışır.`,
+   why:[["kbd","⌘⇧4 · ⌘⇧5 · ⌘⇧3 her yerden"],["alert","İzin yoksa uygulama bunu sana açıkça söyler, sessizce başarısız olmaz"]],
+   pri:["İzin ver","wiz-4"],skip:["Kısayollar sadece uygulamada çalışsın","wiz-4-skip"]},
+  {t:"Çekimler nereye kaydedilsin?",p:()=>`Varsayılan olarak Belgeler klasörünün altına. İstediğin zaman değiştirebilirsin.`,
+   folder:true,pri:["Devam","wiz-5"],skip:null},
+  {t:"Kısayolları belirle",p:()=>`Varsayılanlar hazır. Çakışan bir tuş varsa şimdi görürsün.`,
+   keys:true,pri:["Devam","wiz-6"],skip:null},
+  {t:"Bir yükleme hedefi ekle",p:()=>`Linke çevirmek istersen bir hedef gerekiyor. Şimdi eklemezsen çekimler yalnızca diske kaydedilir.`,
+   dests:true,pri:["Cloudflare R2 ekle","wiz-6-r2"],skip:["Şimdilik yalnızca diske kaydet","wiz-done"]},
+  {t:"Hazırsın",p:()=>`İlk çekimini al: ${OS[S.os].mod}⇧4. FoxShot menü çubuğunda bekliyor.`,
+   done:true,pri:["Bitir","idle"],skip:null}
+];
+function renderWiz(){
+  const w=$("#wiz"); w.classList.toggle("on",S.wiz!=null);
+  if(S.wiz==null) return;
+  const i=S.wiz.i, st=WSTEPS[i];
+  $("#wiz-st").textContent=(i+1)+" / "+WSTEPS.length;
+  $("#wiz-steps").innerHTML=WSTEPS.map((_,k)=>
+    `<i class="${k<i?(S.wiz.skipped&&S.wiz.skipped.includes(k)?"skip":"done"):k===i?"now":""}"></i>`).join("");
+  const T=typeof st.t==="function"?st.t():st.t;
+  const P=typeof st.p==="function"?st.p():st.p;
+  let body=`<h2>${T}</h2><p>${P}</p>`;
+  if(st.why) body+=`<div class="why">${st.why.map(([i2,t])=>`<div>${ic(i2)}<span>${t}</span></div>`).join("")}</div>`;
+  if(st.dlg){ const [di,dt,dp]=st.dlg();
+    body+=`<div class="osdlg"><span class="chip">${ic(di)}</span><div style="flex:1"><b>${dt}</b><p>${dp}</p>
+      <div class="fake"><button class="btn btn-sec sm">Reddet</button><button class="btn btn-pri sm" data-scn="${st.pri[1]}">İzin Ver</button></div></div></div>`; }
+  if(st.folder) body+=`<div class="osdlg"><span class="chip">${ic("folder")}</span><div style="flex:1">
+    <b class="mono" style="font-size:12.5px">~/Belgeler/FoxShot</b><p>Yıla ve aya göre alt klasör açılır: 2026/08/</p>
+    <div class="fake"><button class="btn btn-sec sm">Başka klasör seç</button></div></div></div>`;
+  if(st.keys) body+=`<div class="set" style="margin-top:16px">${[["Bölge seç","⇧4",0],["Pencere","⇧5",0],["Tam ekran","⇧3",1],["Kayıt","⇧6",0]]
+    .map(([n,k,c])=>`<div class="it"><div style="flex:1"><div class="nm">${n}</div>${c?`<div class="sb" style="color:var(--bad)">Sistem ekran görüntüsü aracı bu tuşu kullanıyor</div>`:""}</div>
+    <div class="rr"><kbd class="k" ${c?'style="border-color:var(--bad);color:var(--bad)"':""}>${OS[S.os].mod}${k}</kbd>${c?`<button class="btn btn-sec sm">Değiştir</button>`:""}</div></div>`).join("")}</div>`;
+  if(st.dests) body+=`<div class="rows" style="margin-top:16px">${DESTS.slice(0,3).map(([n,ic2,s])=>
+    `<button class="row"><span class="chip">${ic(ic2==="globe"?"link":ic2)}</span><span><span class="nm">${n}</span><span class="sb">${s}</span></span><span class="rr">${ic("cright")}</span></button>`).join("")}</div>`;
+  if(st.done) body+=`<div class="set" style="margin-top:16px">
+    ${row(OS[S.os].perm,"","<span class='badge b-ok'><span class='dot'></span>Verildi</span>")}
+    ${row("Global kısayollar","","<span class='badge b-ok'><span class='dot'></span>Verildi</span>")}
+    ${row("Kaydetme klasörü","","<span class='mono' style='font-size:12px;color:var(--ink-2)'>~/Belgeler/FoxShot</span>")}
+    ${row("Yükleme hedefi","","<span class='badge b-mut'>Eklenmedi</span>")}</div>`;
+  $("#wiz-body").innerHTML=body;
+  $("#wiz-foot").innerHTML =
+    (st.skip?`<button class="sk" data-scn="${st.skip[1]}">${st.skip[0]}</button>`:`<span class="sk" style="pointer-events:none;opacity:0">·</span>`)+
+    (i>0?`<button class="btn btn-gho" data-scn="wiz-${i}">Geri</button>`:"")+
+    `<button class="btn btn-pri" data-scn="${st.pri[1]}">${st.pri[0]}${ic("aright")}</button>`;
+}
+
+/* ---------------- main render ---------------- */
+function render(){
+  const st=$("#stage"); st.dataset.os=S.os;
+  $("#os-badge").innerHTML = ic(OS[S.os].ic)+" "+OS[S.os].n+" · Core 0.4.1";
+  $("#deskhint").style.display = S.hint?"":"none";
+  $("#win").classList.toggle("on",!!S.win);
+  $$("#dock button").forEach(b=>b.classList.toggle("on",b.dataset.view===S.view));
+  $$(".view").forEach(v=>v.classList.remove("on"));
+  const vm={lib:"v-lib",ed:"v-ed",mod:"v-mod",set:"v-set",up:"v-up"};
+  const el=$("#"+vm[S.view]); if(el) el.classList.add("on");
+  $("#win-title").textContent={lib:"Kütüphane",ed:"Editör",mod:"Modüller",set:"Ayarlar",up:"Yükleme"}[S.view];
+  renderPanel(); renderOvl(); renderToasts(); renderWiz();
+  if(S.win){ if(S.view==="lib")renderLib(); if(S.view==="ed")renderEd();
+    if(S.view==="mod")renderMod(); if(S.view==="set")renderSet(); if(S.view==="up")renderUp(); }
+}
+
+/* ---------------- scenarios ---------------- */
+const G={W:"İlk kurulum",M:"Menü çubuğu",C:"Yakalama",E:"Editör",L:"Kütüphane",U:"Yükleme",O:"Modüller",S:"Ayarlar",X:"Hata ve kenar durumları",P:"Platform farkları",F:"Sonraki modüller"};
+const SC=[];
+const scn=(id,g,t,n,f)=>SC.push({id,g,t,n,f});
+
+/* — wizard — */
+[["wiz-1",0,"Hoş geldin","Kurulum yedi adım. Her izin, istenmeden önce neden gerektiği anlatılıyor."],
+ ["wiz-2",1,"Ekran izni — açıklama","Sistem diyaloğu çıkmadan önce niyet açıklanıyor. İzin yokken çekimin sessizce duvar kağıdı çıkması bu ürünün en sinsi hatası; o yüzden burada duruluyor."],
+ ["wiz-2-ok",2,"Ekran izni — verildi",null],
+ ["wiz-3",3,"Global kısayol izni","Atlanabilir. Atlanırsa kısayollar sadece uygulama öndeyken çalışır ve arayüz bunu söyler."],
+ ["wiz-4",4,"Kaydetme klasörü","Varsayılan: Belgeler/FoxShot, yıl/ay alt klasörleriyle."],
+ ["wiz-4-skip",4,"Kısayol izni atlandı","Adım çubuğunda atlanan adım sarı kalır."],
+ ["wiz-5",5,"Kısayol ataması","Çakışan tuş anında kırmızıya düşüyor, çözüm yanında."],
+ ["wiz-6",6,"Yükleme hedefi","Eklemek zorunlu değil; eklemezsen çekim diske gider."],
+ ["wiz-6-r2",6,"Hedef seçildi",null],
+ ["wiz-done",7,"Kurulum tamam","Özet, eklenmeyeni de gösteriyor — 'Yükleme hedefi: eklenmedi'."]
+].forEach(([id,i,t,n])=>scn(id,G.W,t,n,()=>reset({wiz:{i,skipped:id==="wiz-4-skip"?[3]:[]},hint:false})));
+
+/* — menu bar panel — */
+scn("idle",G.M,"Masaüstü — boşta","Uygulamanın normal hâli: görünmez.",()=>reset({}));
+scn("panel-empty",G.M,"Panel — hiç çekim yok","Boş durum, ilk çekime davet ediyor.",()=>reset({panel:true,libState:"empty",hint:false}));
+scn("panel",G.M,"Panel — normal","Günlük yüzey. Eylemler basılabilir satır; kısayollar mono.",()=>reset({panel:true,hint:false}));
+scn("panel-dest",G.M,"Panel — hedef seçici","Çekim başına hedef değiştirilebiliyor.",()=>reset({panel:true,hint:false,notes:[{icon:"cloud",tone:"act",text:"<b>Hedef: Cloudflare R2 — metanetsoft.</b> Bu çekim cdn.metanetsoft.com üzerinden paylaşılacak."}]}));
+scn("panel-perm",G.M,"Panel — izin eksik","Yakalama denemeden önce uyarıyor, çözüme link veriyor.",()=>reset({panel:true,hint:false,notes:[{icon:"lock",tone:"bad",text:"<b>Ekran kaydı izni yok.</b> Çekimler yalnızca duvar kağıdını gösterir.",act:["Aç","set-privacy"]}]}));
+scn("panel-modupd",G.M,"Panel — modül güncellemesi","Bildirim panelde, işi kesmeden.",()=>reset({panel:true,hint:false,notes:[{icon:"mods",tone:"act",text:"<b>Yükleme modülü 0.4.0 hazır.</b> Kesintisiz devam eden yükleme desteği geliyor.",act:["Güncelle","mod-update-avail"]}]}));
+scn("panel-uploading",G.M,"Panel — yükleme sürüyor",null,()=>reset({panel:true,hint:false,notes:[{icon:"upload",tone:"act",text:"<b>Yükleniyor — %72.</b> checkout-hata.png · Cloudflare R2"}]}));
+scn("panel-done",G.M,"Panel — link hazır","Toast link'i mono gösteriyor; pano zaten dolu.",()=>reset({panel:true,hint:false,toasts:[{t:"Link kopyalandı",s:"checkout-hata.png · Cloudflare R2",link:"fxs.to/a9Kq2",tone:"ok"}]}));
+scn("panel-uperr",G.M,"Panel — yükleme hatası","Hata ne olduğunu ve çıkışı söylüyor.",()=>reset({panel:true,hint:false,notes:[{icon:"alert",tone:"bad",text:"<b>Yükleme başarısız — 403.</b> R2 gizli anahtarı reddedildi. Çekim diske kaydedildi.",act:["Düzelt","up-r2-bad"]}]}));
+scn("panel-rec",G.M,"Panel — kayıt sürüyor","Menü çubuğunda süre, panelde kontrol.",()=>reset({panel:true,hint:false,rec:{t:"00:24"},notes:[{kind:"rec",t:"00:24 · 1920×1080 · 60fps"}]}));
+scn("panel-recpause",G.M,"Panel — kayıt duraklatıldı",null,()=>reset({panel:true,hint:false,rec:{t:"00:24"},notes:[{icon:"pause",tone:"",text:"<b>Kayıt duraklatıldı.</b> 00:24 · devam etmek için panelden ya da ⌘⇧6."}]}));
+scn("panel-offline",G.M,"Panel — hedefe ulaşılamıyor",null,()=>reset({panel:true,hint:false,notes:[{icon:"wifioff",tone:"",text:"<b>Cloudflare R2'ye ulaşılamıyor.</b> Çekimler diske kaydediliyor, bağlantı gelince kuyruk boşalacak.",act:["Kuyruk","up-queue"]}]}));
+
+/* — capture — */
+[["cap-region-idle","region-idle","Bölge — başlangıç","Crosshair, loupe ve piksel okuması. Loupe editörde ve overlay'de aynı nesne."],
+ ["cap-region-drag","region-drag","Bölge — sürükleniyor","Boyut etiketi seçimin üstünde, mono."],
+ ["cap-region-sel","region-sel","Bölge — seçildi","Sekiz tutamak ve eylem çubuğu. Birincil eylem 'Düzenle', çünkü akış oraya gidiyor."],
+ ["cap-region-key","region-key","Bölge — klavyeyle ince ayar","Ok tuşlarıyla 1 px. Klavyeyle çalışan bir araçta bu zorunlu."],
+ ["cap-region-last","region-sel","Son bölgeyi tekrarla","Aynı çerçeve, tek tuşla."],
+ ["cap-window-hover","window-hover","Pencere — algılama","Pencere sınırına oturuyor, adı ve boyutu etiketde."],
+ ["cap-full-pick","full-pick","Tam ekran — ekran seç","İki ekran, ikisinin de ölçeği yazıyor."],
+ ["cap-dpi","dpi","Karışık DPI","Farklı ölçekli ekranlar arasında seçim — bu ürünün klasik hata kaynağı, uyarı görünür."],
+ ["cap-scroll","scroll","Kaydırmalı çekim","Birleşen kare sayısı canlı."],
+ ["cap-timer","timer","Zamanlayıcı","Menüleri açık bırakabilmek için geri sayım."],
+ ["cap-rec-area","rec-area","Kayıt — alan ve mod","Video/GIF seçimi kayıt başlamadan."],
+ ["cap-rec-live","rec-live","Kayıt — sürüyor","Veil açılıyor: kaydedilen içerik görünür kalmalı."],
+ ["cap-rec-pause","rec-pause","Kayıt — duraklatıldı","Çerçeve sarıya dönüyor; renk tek başına anlam taşımıyor, etiket de var."]
+].forEach(([id,k,t,n])=>scn(id,G.C,t,n,()=>reset({ovl:{k},hint:false})));
+scn("cap-cancel",G.C,"İptal edildi","Esc: iz bırakmadan çıkar.",()=>reset({toasts:[{t:"Yakalama iptal edildi",icon:"x"}]}));
+scn("cap-wallpaper",G.C,"Çekim boş çıktı","İzin yokken sessizce duvar kağıdı gelmesi — tespit edilip söylenmesi gereken durum.",()=>reset({toasts:[{t:"Çekimde yalnızca duvar kağıdı var",s:"Ekran kaydı izni verilmemiş görünüyor",btn:"İzni aç",tone:"bad",icon:"alert"}]}));
+scn("cap-nogpu",G.C,"GPU yolu yok","wgpu başlatılamadığında yazılım yoluna düşüyor ve bunu söylüyor.",()=>reset({toasts:[{t:"Yazılım yoluna geçildi",s:"GPU yakalama başlatılamadı — çekim çalışır, kayıt yavaş olabilir",tone:"bad",icon:"alert"}]}));
+
+/* — editor — */
+TOOLS.filter(t=>t[0]!=="sep").forEach(([k,label,key])=>{
+  scn("ed-tool-"+k,G.E,"Araç — "+label+"  ("+key+")",
+    k==="num"?"Numara aracı bu tasarımın merkezinde: her işaret sağda bir bulgu satırı yazıyor. Annotation listesi katman paneli değil, okunabilir belge.":null,
+    ()=>reset({win:true,view:"ed",edTool:k,edFinds:k==="num"?3:2,hint:false}));
+});
+scn("ed-empty",G.E,"Editör — hiç işaret yok","Boş durum bulgu panelinde ne olacağını söylüyor.",()=>reset({win:true,view:"ed",edFinds:0,hint:false}));
+scn("ed-one",G.E,"Editör — tek bulgu",null,()=>reset({win:true,view:"ed",edFinds:1,hint:false}));
+scn("ed-three",G.E,"Editör — üç bulgu",null,()=>reset({win:true,view:"ed",edFinds:3,hint:false}));
+scn("ed-text",G.E,"Metin girişi aktif","İmleç yanıp sönüyor; yazı doğrudan görselin üstünde.",()=>reset({win:true,view:"ed",edTool:"text",edState:"text",edFinds:2,hint:false}));
+scn("ed-crop",G.E,"Kırpma modu","Üçler kuralı ızgarası ve köşe tutamakları.",()=>reset({win:true,view:"ed",edTool:"crop",edState:"crop",edFinds:0,hint:false}));
+scn("ed-blur",G.E,"Bulanıklaştırma uygulandı","Hassas alan pikselleniyor — demo olarak gerçekten çiziliyor.",()=>reset({win:true,view:"ed",edTool:"blur",edState:"blurdemo",edFinds:1,hint:false}));
+scn("ed-effects",G.E,"Efektler paneli","40+ efekt kategoriye ayrılmış; bulgu paneli yerini bırakıyor.",()=>reset({win:true,view:"ed",edState:"effects",edFinds:2,hint:false}));
+scn("ed-unsaved",G.E,"Kaydedilmemiş değişiklik","Uyarı modal değil — iş kesilmiyor.",()=>reset({win:true,view:"ed",edState:"unsaved",edFinds:3,hint:false}));
+[["shot-code","Kod ekran görüntüsü"],["shot-term","Terminal çıktısı"],["shot-dash","Panel görüntüsü"],["shot-bug","Tarayıcı hatası"]]
+ .forEach(([p,t])=>scn("ed-pic-"+p,G.E,"İçerik — "+t,"Farklı içerikte editör: şeffaflık ızgarası, ölçek ve mürekkep kontrastı test ediliyor.",
+   ()=>reset({win:true,view:"ed",edPic:p,edFinds:2,hint:false})));
+scn("ed-saved",G.E,"Kaydedildi",null,()=>reset({win:true,view:"ed",edFinds:3,hint:false,toasts:[{t:"Kaydedildi",s:"~/Belgeler/FoxShot/2026/08/FS-0834.png",tone:"ok"}]}));
+scn("ed-copied",G.E,"Panoya kopyalandı",null,()=>reset({win:true,view:"ed",edFinds:3,hint:false,toasts:[{t:"Panoya kopyalandı",s:"1284 × 812 · PNG",tone:"ok"}]}));
+
+/* — library — */
+[["lib-grid","grid","normal","Izgara görünümü","Künye numarası her plakada; 'Link' etiketi yüklenmiş olanı ayırıyor."],
+ ["lib-list","list","normal","Liste görünümü","Yoğun okuma: ad, künye, boyut, zaman, link tek satırda."],
+ ["lib-empty","grid","empty","Boş kütüphane",null],
+ ["lib-loading","grid","loading","Taranıyor",null],
+ ["lib-selected","grid","selected","Öğe seçili — detay",null],
+ ["lib-multi","grid","multi","Çoklu seçim",null],
+ ["lib-search","grid","search","Arama sonucu",null],
+ ["lib-notfound","grid","notfound","Sonuç yok","Hata değil, yol gösteriyor: neyle arayabileceğini söylüyor."],
+ ["lib-filters","grid","filters","Filtreler açık",null],
+ ["lib-delete","grid","delete","Silme onayı","Silmenin yüklenmiş kopyayı etkilemediğini açıkça yazıyor."],
+ ["lib-missing","grid","missing","Dosya bulunamadı",null]
+].forEach(([id,v,s,t,n])=>scn(id,G.L,t,n,()=>reset({win:true,view:"lib",libView:v,libState:s,hint:false})));
+scn("lib-bulk",G.L,"Toplu yükleme","Seçilenler kuyruğa giriyor.",()=>reset({win:true,view:"up",upState:"queue",hint:false}));
+scn("lib-expired",G.L,"Link süresi doldu","Ücretsiz servislerde link ölür; kayıt kalır.",()=>reset({win:true,view:"lib",libView:"list",libState:"normal",hint:false,toasts:[{t:"3 link süresi doldu",s:"Ücretsiz servis · yeniden yüklemek yeni link üretir",btn:"Yeniden yükle",icon:"alert"}]}));
+
+/* — upload — */
+[["up-list","list","Hedef listesi","Dört hedef, biri varsayılan. 'Yalnızca diske kaydet' de bir hedef — hiçbir yere göndermemek meşru seçim."],
+ ["up-r2","r2","Cloudflare R2 — yapılandırma",null],
+ ["up-r2-verify","r2-verify","R2 — doğrulanıyor",null],
+ ["up-r2-bad","r2-bad","R2 — anahtar reddedildi","Hata hangi alanın hatalı olduğunu işaretliyor ve çözümü söylüyor."],
+ ["up-r2-ok","r2-ok","R2 — bağlandı","Test dosyası yazıp sildi; 'doğrulandı' iddiası gerçek bir işe dayanıyor."],
+ ["up-accounts","accounts","Çoklu hesap","Aynı hedefin birden fazla hesabı; çekim başına seçilebilir."],
+ ["up-queue","queue","Yükleme kuyruğu",null],
+ ["up-progress","progress","Yükleniyor",null],
+ ["up-done","done","Yüklendi — link hazır",null],
+ ["up-err-auth","err-auth","Hata — kimlik doğrulama",null],
+ ["up-err-net","err-net","Hata — bağlantı kesildi","Kaldığı yerden devam edebilmesi önemli: 1,2 GB videoyu baştan yüklemek kabul edilemez."],
+ ["up-err-size","err-size","Hata — dosya çok büyük","Sınırı aşan dosya için hangi hedefin kabul edeceğini söylüyor."]
+].forEach(([id,s,t,n])=>scn(id,G.U,t,n,()=>reset({win:true,view:"up",upState:s,hint:false})));
+scn("up-s3",G.U,"Amazon S3 — yapılandırma",null,()=>reset({win:true,view:"up",upState:"r2",hint:false}));
+scn("up-free",G.U,"Ücretsiz servisler","Hesap yok, link süreli — ödün açıkça yazılı.",()=>reset({win:true,view:"up",upState:"list",hint:false}));
+
+/* — modules — */
+[["mod-list","list","Modül listesi","Üç grup: Core, platform adaptörleri, özellik modülleri. Core'un kendi sürümü var ve üç platformu da o besliyor."],
+ ["mod-detail","detail","Modül detayı + changelog",null],
+ ["mod-update-avail","mod-update","Güncelleme mevcut",null],
+ ["mod-updating","updating","Güncelleniyor","İlerleme satırın içinde; iş kesilmiyor."],
+ ["mod-updated","updated","Güncellendi",null],
+ ["mod-failed","failed","Güncelleme başarısız","Eski sürüm çalışmaya devam ediyor — bu cümle kullanıcıyı rahatlatan asıl bilgi."],
+ ["mod-notinstalled","notinstalled","Modül kurulu değil","Kilitli özellik hata değil, kurulabilir bir durum."],
+ ["mod-installing","installing","Modül kuruluyor",null],
+ ["mod-remove","remove","Modül kaldırma onayı","Neyin devre dışı kalacağını, neyin kalacağını ayırıyor."],
+ ["mod-versions","versions","Sürüm geçmişi ve geri dönüş","Bağımsız sürümlemenin karşılığı: her modül geri alınabilir."],
+ ["mod-auto","auto","Otomatik güncelleme ayarları",null],
+ ["mod-core","corerestart","Core güncellemesi","Core değişiminin üç platformu birden etkilediği burada yazılı."],
+ ["mod-incompat","incompat","Uyumsuz sürüm","Modül Core'un sürümüne bağlı; sebep ve çözüm birlikte."],
+ ["mod-signature","signature","İmza doğrulanamadı","Güvenlik reddi sessiz olmuyor ve eski sürümü koruduğunu söylüyor."],
+ ["mod-offline","offline","Çevrimdışı",null]
+].forEach(([id,s,t,n])=>scn(id,G.O,t,n,()=>reset({win:true,view:"mod",modState:s,hint:false})));
+
+/* — settings — */
+[["set-general","general",0,0,"Genel ve kaydetme",null],
+ ["set-hotkeys","hotkeys",0,0,"Kısayollar",null],
+ ["set-hk-conflict","hotkeys",1,0,"Kısayol çakışması","Hangi uygulamanın aldığını söylüyor."],
+ ["set-hk-focus","hotkeys",0,1,"Kısayollar yalnızca odakta","Wayland'da portal yoksa oluşan gerçek durum; sessiz başarısızlık yerine açık uyarı."],
+ ["set-privacy","privacy",0,0,"İzin durumu",null],
+ ["set-dest","paths",0,0,"Hedefler",null],
+ ["set-about","about",0,0,"Hakkında ve lisans","Lisans iddiası burada net: kaynak açık, ticari satış hakkı Metanetsoft'ta."]
+].forEach(([id,p,c,f,t,n])=>scn(id,G.S,t,n,()=>reset({win:true,view:"set",setPane:p,hkConflict:!!c,hkFocus:!!f,hint:false})));
+
+/* — errors & edges — */
+scn("x-perm-lost",G.X,"Güncelleme sonrası izin sıfırlandı","İmzasız sürümlerde gerçekten oluyor; açılışta kontrol edip söylüyor.",()=>reset({panel:true,hint:false,notes:[{icon:"lock",tone:"bad",text:"<b>Ekran kaydı izni kayboldu.</b> Güncelleme kimliği değiştirdi. Tek tıkla yeniden isteyebiliriz.",act:["Yeniden iste","wiz-2"]}]}));
+scn("x-wayland",G.X,"Wayland portalı yok","Platform farkı gizlenmiyor, adı konuyor.",()=>reset({panel:true,hint:false,os:"linux",notes:[{icon:"alert",tone:"",text:"<b>xdg-desktop-portal bulunamadı.</b> Yakalama ve global kısayollar Wayland'da bu portala bağlı. Paket kurulumu bunu birlikte getirir."}]}));
+scn("x-clipboard",G.X,"Pano aracı eksik","Eksik bağımlılığın adı ve ne yapacağı yazılı.",()=>reset({hint:false,os:"linux",toasts:[{t:"Panoya kopyalanamadı",s:"wl-clipboard kurulu değil — çekim diske kaydedildi",btn:"Nasıl kurulur",tone:"bad",icon:"alert"}]}));
+scn("x-disk",G.X,"Disk dolu",null,()=>reset({hint:false,toasts:[{t:"Kaydedilemedi — disk dolu",s:"~/Belgeler için 412 KB yer gerekiyor",btn:"Klasörü aç",tone:"bad",icon:"hdd"}]}));
+scn("x-crash",G.X,"Çökme sonrası kurtarma","İşlenmemiş çekim kaybolmuyor.",()=>reset({win:true,view:"lib",libState:"normal",libView:"grid",hint:false,toasts:[{t:"1 çekim kurtarıldı",s:"Beklenmedik kapanmadan önce düzenleniyordu",btn:"Editörde aç",icon:"refresh"}]}));
+scn("x-hotkey-dead",G.X,"Kısayol çalışmıyor",null,()=>reset({win:true,view:"set",setPane:"hotkeys",hkFocus:true,hint:false}));
+scn("x-updsrv",G.X,"Güncelleme sunucusu yok",null,()=>reset({win:true,view:"mod",modState:"offline",hint:false}));
+scn("x-bigfile",G.X,"Büyük dosya uyarısı",null,()=>reset({win:true,view:"up",upState:"err-size",hint:false}));
+scn("x-conflict",G.X,"Kayıt sürerken çekim","Çakışan iki eylem: hangisinin kazandığı söyleniyor.",()=>reset({hint:false,rec:{t:"01:12"},toasts:[{t:"Kayıt sürerken bölge yakalandı",s:"Kayıt kesilmedi — çekim ayrı dosyaya gitti",tone:"ok"}]}));
+
+/* — platform differences — */
+[["p-mac","mac","macOS kabuğu","Trafik ışıkları solda, ⌘ kısayolları, TCC izinleri."],
+ ["p-linux","linux","Linux kabuğu","GNOME başlık düğmeleri sağda, Ctrl kısayolları, portal uyarıları. Core aynı."],
+ ["p-win","win","Windows kabuğu","Caption düğmeleri sağda ve köşesiz, Graphics Capture. Core aynı."]
+].forEach(([id,os,t,n])=>scn(id,G.P,t,n,()=>{S.os=os;reset({win:true,view:"mod",modState:"list",hint:false});
+  $$("#osw button").forEach(b=>b.classList.toggle("on",b.dataset.os===os));}));
+scn("p-core",G.P,"Core → üç platform","Modül listesi mimariyi gösteriyor: tek Core, üç adaptör, ayrı sürümler.",()=>reset({win:true,view:"mod",modState:"list",hint:false}));
+scn("p-hotkeys",G.P,"Kısayollar platforma göre","Aynı eylem, platformun kendi tuş dili.",()=>reset({win:true,view:"set",setPane:"hotkeys",hint:false}));
+
+/* — future modules — */
+[["f-video","Video editör","Kayıttan sonra kes, hızlandır, GIF'e çevir."],
+ ["f-gif","GIF çıktısı","Boyut/kare dengesi ayarlanabilir."],
+ ["f-ocr","OCR sonucu","Görselden metin; kopyalanabilir blok."],
+ ["f-qr","QR okuma ve üretme",null],
+ ["f-picker","Renk seçici","Ekrandan piksel rengi, format seçimi."],
+ ["f-ruler","Cetvel","Ekranda ölçüm."],
+ ["f-pin","Ekrana sabitle","Çekimi üstte tutan pencere."],
+ ["f-flow","İş akışı zinciri","Yakala → efekt → yükle → kısalt → kopyala, tek kısayolda."]
+].forEach(([id,t,n])=>scn(id,G.F,t,(n?n+" ":"")+"Tasarımda var, v1'de yok — modül olarak sonra geliyor.",
+  ()=>reset({win:true,view:"mod",modState:"notinstalled",hint:false})));
+
+/* ---------------- scenario index ---------------- */
+let cur = 0, filter = "";
+function renderIdx(){
+  const list=$("#idx-list"); list.innerHTML="";
+  const q=filter.trim().toLowerCase();
+  const shown=SC.map((s,i)=>({s,i})).filter(({s})=>!q||(s.t+" "+s.g+" "+(s.n||"")).toLowerCase().includes(q));
+  let g=null;
+  if(!shown.length){ list.append(h("div",{style:"padding:20px 10px;text-align:center;font-size:12.5px;color:var(--ink-4);line-height:1.55"},"Eşleşen senaryo yok.")); }
+  shown.forEach(({s,i})=>{
+    if(s.g!==g){ g=s.g;
+      const n=shown.filter(x=>x.s.g===g).length;
+      list.append(h("div",{class:"gh",html:`<b>${g}</b><span>${n}</span>`})); }
+    list.append(h("button",{class:"si"+(i===cur?" on":""),"data-i":i,html:
+      `<span class="n">${String(i+1).padStart(3,"0")}</span><span class="t">${s.t}</span>`}));
+  });
+  $("#idx-cnt").textContent = SC.length+" senaryo · "+Object.keys(G).length+" grup";
+  const s=SC[cur];
+  $("#si-note").innerHTML = s.n ? s.n : `<span style="color:var(--ink-4)">${s.g} — ${s.t}</span>`;
+}
+function go(i){
+  cur=(i+SC.length)%SC.length;
+  SC[cur].f();
+  renderIdx();
+  const b=$(`.si[data-i="${cur}"]`); if(b) b.scrollIntoView({block:"nearest"});
+}
+
+/* ---------------- wiring ---------------- */
+document.addEventListener("click",e=>{
+  const si=e.target.closest(".si"); if(si){ go(+si.dataset.i); return; }
+  const os=e.target.closest("#osw button");
+  if(os){ $$("#osw button").forEach(b=>b.classList.toggle("on",b===os)); S.os=os.dataset.os; render(); return; }
+  const sc=e.target.closest("[data-scn]");
+  if(sc){ const i=SC.findIndex(x=>x.id===sc.dataset.scn); if(i>=0){ go(i); return; } }
+  if(e.target.closest("#tray")){ set({panel:!S.panel,hint:false}); return; }
+  const dv=e.target.closest("#dock button");
+  if(dv){ set({view:dv.dataset.view}); return; }
+  const tl=e.target.closest("[data-tool]");
+  if(tl){ const k=tl.dataset.tool; set({edTool:k,edState:k==="crop"?"crop":k==="text"?"text":"normal",edFinds:S.edFinds}); return; }
+  const sp=e.target.closest("[data-set]");
+  if(sp){ set({setPane:sp.dataset.set}); return; }
+  const lv=e.target.closest("#lib-seg button");
+  if(lv){ set({libView:lv.dataset.lv}); return; }
+  const sg=e.target.closest(".seg button");
+  if(sg&&sg.parentElement){ [...sg.parentElement.children].forEach(x=>x.classList.toggle("on",x===sg)); return; }
+  const tg=e.target.closest(".sw-t"); if(tg){ tg.classList.toggle("on"); return; }
+  const sw2=e.target.closest(".sw"); if(sw2&&sw2.parentElement){ [...sw2.parentElement.children].forEach(x=>x.classList.toggle("on",x===sw2)); return; }
+  const wd=e.target.closest(".wd"); if(wd&&wd.parentElement){ [...wd.parentElement.children].forEach(x=>x.classList.toggle("on",x===wd)); return; }
+  if(e.target.closest(".lights.mac i:first-child")||e.target.closest(".lights .wn i:last-child")){ set({win:false,hint:true}); return; }
+  if(e.target.closest(".lights.wn i:last-child")||e.target.closest(".lights.gn i:last-child")){ set({win:false,hint:true}); return; }
+  const fx=e.target.closest(".find .x"); if(fx){ set({edFinds:Math.max(0,S.edFinds-1)}); return; }
+  if(!e.target.closest("#panel")&&!e.target.closest("#tray")&&S.panel){ set({panel:false}); }
+});
+$("#btn-next").onclick=()=>go(cur+1);
+$("#btn-prev").onclick=()=>go(cur-1);
+$("#idx-q").oninput=e=>{filter=e.target.value;renderIdx();};
+document.addEventListener("keydown",e=>{
+  if(e.target.tagName==="INPUT") return;
+  if(e.key==="j"||e.key==="ArrowDown"){e.preventDefault();go(cur+1);}
+  if(e.key==="k"||e.key==="ArrowUp"){e.preventDefault();go(cur-1);}
+  if(e.key==="Escape"){ const i=SC.findIndex(x=>x.id==="idle"); if(i>=0)go(i); }
+  if(e.key==="/"){e.preventDefault();$("#idx-q").focus();}
+});
+
+go(SC.findIndex(x=>x.id==="panel"));
+</script>
+
+<style>
+#set-actions .seg{max-width:420px;overflow-x:auto;scrollbar-width:none}
+#set-actions .seg::-webkit-scrollbar{height:0}
+#set-actions .seg button{white-space:nowrap;padding:4px 9px;font-size:12px}
+.sheet{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r-lg);
+  box-shadow:var(--sh-pop);padding:16px 18px;max-width:min(560px,calc(100% - 36px))
+}
+.sheet h4{font:700 15px/1.3 var(--ff);margin-bottom:12px}
+.kcols{display:grid;grid-template-columns:1fr 1fr;gap:5px 22px}
+.krow{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--ink-2)}
+.krow kbd{margin-left:auto}
+.cmp{display:flex;gap:2px;border-radius:6px;overflow:hidden;border:1px solid var(--border)}
+.cmp>div{position:relative;line-height:0}
+.cmp .lb{position:absolute;left:6px;top:6px;font:500 10px/1 var(--ff);letter-spacing:.08em;text-transform:uppercase;background:rgba(10,8,6,.8);color:var(--ink-2);padding:3px 6px;border-radius:4px}
+</style>
+<script>
+/* extra settings panes */
+SETPANES.appearance=["Görünüm",()=>`
+  <div class="set">
+    ${row("Tema","FoxShot yalnızca koyu temada çalışır — karanlık ortamda ekran yakalarken parlak arayüz gözü yorar ve çekimin kendisini bozar.",`<span class="badge b-mut">Koyu</span>`)}
+    ${row("Vurgu rengi","Basılabilir her şey bu rengi taşır",`<div class="swatches"><button class="sw on" style="background:#FF6A3D"></button><button class="sw" style="background:#E0574C"></button><button class="sw" style="background:#D9A036"></button><button class="sw" style="background:#63B98C"></button></div>`)}
+    ${sw("Menü çubuğunda süre göster","Kayıt sürerken geçen süre",1)}
+    ${sw("Dock'ta simge göster","Kapalıysa yalnızca menü çubuğunda yaşar",0)}
+  </div>`];
+SETPANES.updates=["Güncellemeler",()=>`
+  <div class="set">
+    ${row("Kanal","Kararlı sürümler haftalık, beta günlük",`<div class="seg"><button class="on">Kararlı</button><button>Beta</button></div>`)}
+    ${sw("Modülleri otomatik güncelle","Core hariç, arka planda",1)}
+    ${sw("Core için onay sor","Core değişimi üç platformu birden etkiler",1)}
+    ${row("Son kontrol","",`<span class="mono" style="font-size:12px;color:var(--ink-3)">12 dk önce</span><button class="btn btn-sec sm">Şimdi ara</button>`)}
+  </div>
+  <div class="pnote" style="margin:0">${ic("info")}<p>Sürümler bağımsız: <b>Core 0.4.1</b>, ${OS[S.os].n} adaptörü <b>0.4.1</b>, Yükleme <b>0.3.8</b>, Video <b>0.2.2</b>. Modül listesinden tek tek güncelleyebilirsin.</p></div>`];
+SETPANES.advanced=["Gelişmiş",()=>`
+  <div class="set">
+    ${row("Yakalama yolu","wgpu üzerinden GPU okuması",`<div class="seg"><button class="on">GPU</button><button>Yazılım</button></div>`)}
+    ${row("Kayıt kodlayıcı","",`<div class="seg"><button class="on">Donanım</button><button>x264</button></div>`)}
+    ${sw("Ayrıntılı günlük","Hata ayıklama için; dosya boyutu büyür",0)}
+    ${row("Ayar dosyası","",`<span class="mono" style="font-size:11.5px;color:var(--ink-3)">~/.config/foxshot/settings.toml</span>`)}
+  </div>
+  <div style="display:flex;gap:7px"><button class="btn btn-sec sm">${ic("download")}Ayarları yedekle</button>
+  <button class="btn btn-sec sm">${ic("upload")}Yedekten yükle</button>
+  <button class="btn btn-gho sm" data-scn="set-reset">Sıfırla…</button></div>`];
+SETPANES.reset=["Sıfırlama",()=>`
+  <div class="card" style="padding:17px;border-color:rgba(224,87,76,.32);max-width:560px">
+    <div style="display:flex;gap:12px;align-items:flex-start">
+      <span class="chip" style="background:var(--bad-tint);border-color:rgba(224,87,76,.3);color:var(--bad)">${ic("refresh")}</span>
+      <div style="flex:1"><div style="font-weight:500;font-size:15px">Tüm ayarlar sıfırlansın mı?</div>
+      <p style="font-size:13px;color:var(--ink-3);margin-top:6px;line-height:1.6;max-width:60ch">Kısayollar, hedefler ve editör varsayılanları fabrika değerlerine döner. <b style="color:var(--ink-2)">Çekimlerin ve yüklenmiş linkler silinmez.</b> Kurulu modüller de kalır.</p>
+      <div style="display:flex;gap:7px;margin-top:13px"><button class="btn btn-dan sm">Ayarları sıfırla</button>
+      <button class="btn btn-gho sm" data-scn="set-advanced">Vazgeç</button></div></div></div></div>`];
+
+/* editor extras: sheets */
+const _ed = renderEd;
+renderEd = function(){
+  _ed();
+  const cv=$("#v-ed .canvas"); const old=cv.querySelector(".sheet"); if(old) old.remove();
+  const shot=$("#ed-shot");
+  if(S.edState==="compare"){
+    shot.style.display="none";
+    cv.insertAdjacentHTML("beforeend",`<div class="sheet" style="padding:12px">
+      <div class="cmp"><div><svg viewBox="0 0 320 200" style="width:250px;display:block"><use href="#i-shot-bug"/></svg><span class="lb">Önce</span></div>
+      <div><svg viewBox="0 0 320 200" style="width:250px;display:block"><use href="#i-shot-bug"/></svg><span class="lb" style="color:var(--action)">Sonra</span>
+      <svg viewBox="0 0 320 200" style="position:absolute;inset:0;width:100%;height:100%"><circle cx="62" cy="46" r="9" fill="#FF6A3D"/><rect x="150" y="112" width="128" height="46" rx="4" fill="none" stroke="#E0574C" stroke-width="2.5"/></svg></div></div></div>`);
+  } else shot.style.display="";
+  if(S.edState==="shortcuts"){
+    cv.insertAdjacentHTML("beforeend",`<div class="sheet"><h4>Editör kısayolları</h4><div class="kcols">
+      ${[["Seç","V"],["Dikdörtgen","R"],["Elips","E"],["Ok","A"],["Kalem","P"],["Metin","T"],["Numara","N"],["Kırp","C"],
+         ["Bulanıklaştır","F"],["Büyüteç","M"],["Spot","S"],["Geri al","⌘Z"],["Yinele","⇧⌘Z"],["Kaydet","⌘S"],["Kopyala","⌘C"],["Yükle","⌘⏎"]]
+      .map(([n,k])=>`<div class="krow"><span>${n}</span><kbd class="k">${k}</kbd></div>`).join("")}
+    </div><p style="font-size:12.5px;color:var(--ink-3);margin-top:13px;line-height:1.55;max-width:56ch">Tüm araçlar tek harfle. Fare hiç gerekmez — ok tuşları işareti 1 px, Shift ile 10 px taşır.</p></div>`);
+  }
+  if(S.edState==="zoom"){
+    cv.insertAdjacentHTML("beforeend",`<div class="sheet" style="padding:10px 12px;top:auto;bottom:16px;transform:translateX(-50%)">
+      <div style="display:flex;align-items:center;gap:9px">
+        <button class="btn btn-gho icon sm">${ic("min")}</button>
+        <div class="seg">${["%50","%100","%200","Sığdır"].map((z,i)=>`<button class="${i===1?"on":""}">${z}</button>`).join("")}</div>
+        <button class="btn btn-gho icon sm">${ic("plus")}</button>
+        <span class="mono" style="font-size:11.5px;color:var(--ink-4);margin-left:4px">1284 × 812 · @2×</span></div></div>`);
+  }
+};
+
+/* ---- additional scenarios ---- */
+scn("wiz-2-denied",G.W,"İzin reddedildi — kurtarma","Reddedilince yol kapanmıyor: uygulama tam olarak nereye gidileceğini söylüyor.",()=>reset({wiz:{i:1,skipped:[]},hint:false,toasts:[{t:"İzin reddedildi",s:"Sistem Ayarları → Gizlilik ve Güvenlik → Ekran Kaydı",btn:"Ayarları aç",tone:"bad",icon:"lock"}]}));
+scn("m-dest-open",G.M,"Panel — hedef listesi açık","Hedef çekim başına değiştirilebiliyor; 'yalnızca disk' de bir seçenek.",()=>reset({panel:true,hint:false,win:true,view:"up",upState:"list"}));
+scn("ed-shortcuts",G.E,"Klavye kısayol tablosu","Klavyeyle çalışma iddiasının kanıtı: her araç tek harf, fare gereksiz.",()=>reset({win:true,view:"ed",edState:"shortcuts",edFinds:2,hint:false}));
+scn("ed-compare",G.E,"Önce / sonra karşılaştırma","İşaretlerin altındaki görüntü hiç değişmedi — non-destructive olduğunun görsel kanıtı.",()=>reset({win:true,view:"ed",edState:"compare",edFinds:2,hint:false}));
+scn("ed-zoom",G.E,"Zoom kontrolü","Piksel doğruluğu için @2× okuması yanında.",()=>reset({win:true,view:"ed",edState:"zoom",edFinds:2,hint:false}));
+scn("ed-spot-demo",G.E,"Spot uygulandı","Çevre karartılıp dikkat tek yere toplanıyor.",()=>reset({win:true,view:"ed",edTool:"spot",edState:"crop",edFinds:1,hint:false}));
+scn("ed-magnify-demo",G.E,"Büyüteç uygulandı","Küçük detayı görselin içinde büyütür.",()=>reset({win:true,view:"ed",edTool:"magnify",edFinds:2,hint:false}));
+scn("ed-sticker-demo",G.E,"Görsel / sticker eklendi",null,()=>reset({win:true,view:"ed",edTool:"sticker",edFinds:2,hint:false}));
+scn("set-appearance",G.S,"Görünüm","Koyu tema bir seçenek değil, ürün kararı — ve gerekçesi ayarın içinde yazılı.",()=>reset({win:true,view:"set",setPane:"appearance",hint:false}));
+scn("set-updates",G.S,"Güncelleme ayarları","Bağımsız sürümler burada tek tek listeli.",()=>reset({win:true,view:"set",setPane:"updates",hint:false}));
+scn("set-advanced",G.S,"Gelişmiş","GPU / yazılım yakalama yolu seçilebiliyor.",()=>reset({win:true,view:"set",setPane:"advanced",hint:false}));
+scn("set-reset",G.S,"Sıfırlama onayı","Neyin silinmediğini vurguluyor — korkuyu azaltan bilgi.",()=>reset({win:true,view:"set",setPane:"reset",hint:false}));
+scn("lib-video",G.L,"Kütüphanede video","Video öğesi süresiyle listede.",()=>reset({win:true,view:"lib",libView:"list",libState:"normal",hint:false,toasts:[{t:"Kayıt kütüphaneye eklendi",s:"00:24 · 1920×1080 · 18,4 MB",tone:"ok",icon:"video"}]}));
+scn("up-shorten",G.U,"Özel alan adı ve kısaltma","Link senin alan adından çıkıyor.",()=>reset({win:true,view:"up",upState:"r2-ok",hint:false}));
+scn("x-firstcap-noperm",G.X,"İlk çekim — izin yok","Kullanıcı kısayola bastı, izin yok: sihirbaza yönlendiriliyor.",()=>reset({hint:false,wiz:{i:1,skipped:[]}}));
+scn("p-shell-linux",G.P,"Linux pencere kabuğu","Başlık düğmeleri sağda, yuvarlaklık farklı — içerik birebir aynı.",()=>{S.os="linux";reset({win:true,view:"lib",libView:"grid",libState:"normal",hint:false});$$("#osw button").forEach(b=>b.classList.toggle("on",b.dataset.os==="linux"));});
+scn("p-shell-win",G.P,"Windows pencere kabuğu","Caption düğmeleri köşesiz — Core arayüzü değişmiyor.",()=>{S.os="win";reset({win:true,view:"lib",libView:"grid",libState:"normal",hint:false});$$("#osw button").forEach(b=>b.classList.toggle("on",b.dataset.os==="win"));});
+
+/* re-sort by group so the index reads in flow order, then boot */
+const ORDER=[G.W,G.M,G.C,G.E,G.L,G.U,G.O,G.S,G.X,G.P,G.F];
+SC.sort((a,b)=>ORDER.indexOf(a.g)-ORDER.indexOf(b.g));
+go(SC.findIndex(x=>x.id==="panel"));
+</script>
+
+<style>
+/* --- corrective pass: batched fixes from the inspection round --- */
+
+/* every ic() icon without an explicit class gets a sane default size.
+   :where() keeps specificity at 0 so all the sized rules above still win. */
+:where(svg[class=""]){width:16px;height:16px;flex:0 0 auto}
+.badge svg{width:12px;height:12px}
+.osbadge svg{width:12px;height:12px}
+.ohint svg{width:14px;height:14px}
+.row .rr svg{width:15px;height:15px;color:var(--ink-4)}
+.olabel svg{width:15px;height:15px;color:var(--ink-3)}
+.krow svg{width:14px;height:14px}
+
+/* stacked label + sublabel: these are spans, so they need to be blocks */
+.act-row .t,.act-row .s,
+.row .nm,.row .sb,
+.find .tx,.find .co,
+.mod .nm,.mod .ver,
+.toast .tt,.toast .ts,
+.plate .mt .nm{display:block}
+
+/* tool rail: give the keycap letter its own room */
+.tool{height:40px;flex-basis:40px;padding-bottom:7px}
+.tool svg{margin-top:-3px}
+.tool .kk{right:auto;left:50%;transform:translateX(-50%);bottom:3px;font-size:8px;opacity:.8;letter-spacing:.02em}
+
+/* sticky group header sat above the scroll box and clipped the first row */
+.idx-list{padding-top:2px}
+.gh{top:0}
+
+/* wallpaper: the desktop was reading as a void */
+.stage{
+  background:
+    radial-gradient(58% 44% at 76% 6%, rgba(255,138,74,.10) 0%, transparent 62%),
+    radial-gradient(46% 38% at 10% 96%, rgba(120,96,190,.10) 0%, transparent 64%),
+    linear-gradient(158deg,#241B14 0%,#15100C 46%,#0E0B08 100%)
+}
+.stage::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(104deg,transparent 34%,rgba(255,255,255,.022) 46%,transparent 58%)
+}
+</style>
+
+<style>
+/* second pass: fit more of a scrolling list into the window, tighten module rows */
+.win{height:min(604px,calc(100% - 84px))}
+.mod{padding:11px 14px}
+.modlist{gap:6px;margin-bottom:15px}
+.modgrp{margin-bottom:7px}
+.vhead{padding:16px 20px 10px}
+</style>
