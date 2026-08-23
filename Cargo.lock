@@ -436,7 +436,7 @@ checksum = "aa9a19cbb55df58761df49b23516a86d432839add4af60fc256da840f66ed35b"
 
 [[package]]
 name = "foxshot-app"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "foxshot-core",
  "foxshot-platform-linux",
@@ -447,7 +447,7 @@ dependencies = [
 
 [[package]]
 name = "foxshot-core"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "hmac",
  "serde",
@@ -457,7 +457,7 @@ dependencies = [
 
 [[package]]
 name = "foxshot-platform-linux"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "foxshot-core",
  "libc",
@@ -469,7 +469,7 @@ dependencies = [
 
 [[package]]
 name = "foxshot-platform-macos"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "core-foundation",
  "core-graphics",
@@ -479,7 +479,7 @@ dependencies = [
 
 [[package]]
 name = "foxshot-platform-windows"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "futures-core"
