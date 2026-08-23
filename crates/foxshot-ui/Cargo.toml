@@ -1,6 +1,6 @@
 [package]
 name = "foxshot-ui"
-version = "0.2.0"
+version = "0.3.0"
 description = "FoxShot UI — the wgpu/winit render layer: interactive region selection over a captured frame."
 edition.workspace = true
 license.workspace = true
