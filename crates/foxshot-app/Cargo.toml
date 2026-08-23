@@ -16,6 +16,7 @@ path = "src/main.rs"
 
 [dependencies]
 foxshot-core = { path = "../foxshot-core" }
+foxshot-ui = { path = "../foxshot-ui" }
 png = "0.17"
 
 [target.'cfg(target_os = "linux")'.dependencies]

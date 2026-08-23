@@ -11,6 +11,7 @@ pub mod frame;
 pub mod geometry;
 pub mod module;
 pub mod platform;
+pub mod selection;
 pub mod testing;
 pub mod update;
 pub mod upload;
@@ -20,6 +21,7 @@ pub use error::{Error, Result};
 pub use frame::Frame;
 pub use geometry::{Point, Rect, Scale, Size};
 pub use module::{Component, ModuleInfo, ModuleRegistry, ModuleState, Version};
+pub use selection::{Handle, SelectionPhase, SelectionState};
 pub use platform::{
     ButtonSide, ChromeStyle, ClipboardService, Display, Fetch, HotkeyService,
     NotificationService, Paths, Permission, PermissionService, PermissionState, Platform,

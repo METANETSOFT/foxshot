@@ -1,0 +1,22 @@
+[package]
+name = "foxshot-ui"
+version = "0.2.0"
+description = "FoxShot UI — the wgpu/winit render layer: interactive region selection over a captured frame."
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true
+
+# The render layer lives here and only here: Core never sees a GPU or a
+# window. This crate owns pixels and input events; it owns no selection
+# logic — every decision comes from foxshot_core::SelectionState.
+[dependencies]
+foxshot-core = { path = "../foxshot-core" }
+wgpu = "26"
+winit = "0.30"
+pollster = "0.4"
+bytemuck = { version = "1", features = ["derive"] }

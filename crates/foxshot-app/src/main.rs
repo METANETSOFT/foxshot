@@ -55,6 +55,7 @@ fn print_usage() {
          \x20 foxshot capture --full -o <path> [--upload [--target r2|s3|free]]\n\
          \x20 foxshot capture --display <id> -o <path>\n\
          \x20 foxshot capture --region <x>,<y>,<w>,<h> -o <path>\n\
+         \x20 foxshot capture --region-select -o <path>\n\
          \x20 foxshot upload <file> [--target r2|s3|free]\n\
          \x20 foxshot daemon [--full-key <accel>] [--region-key <accel>] [--upload]\n\
          \x20 foxshot displays\n\
@@ -116,6 +117,8 @@ enum CaptureMode {
     Display(u32),
     /// An explicit rectangle in desktop coordinates.
     Region(Rect),
+    /// Interactive region selection over a capture of the primary display.
+    RegionSelect,
 }
 
 fn cmd_capture(args: &[String]) -> Result<(), String> {
@@ -141,13 +144,16 @@ fn cmd_capture(args: &[String]) -> Result<(), String> {
                 let value = next("--region")?;
                 set_mode(&mut mode, CaptureMode::Region(parse_region(value)?))?;
             }
+            "--region-select" => set_mode(&mut mode, CaptureMode::RegionSelect)?,
             "-o" | "--output" => output = Some(PathBuf::from(next("-o")?)),
             "--upload" => upload = true,
             "--target" => target_name = next("--target")?.clone(),
             other => return Err(format!("unknown capture option '{other}'")),
         }
     }
-    let mode = mode.ok_or("capture needs one of --full, --display <id>, --region <x>,<y>,<w>,<h>")?;
+    let mode = mode.ok_or(
+        "capture needs one of --full, --display <id>, --region <x>,<y>,<w>,<h>, --region-select",
+    )?;
     if output.is_none() && !upload {
         return Err("capture needs -o <path> (or --upload to send it straight to a target)".into());
     }
@@ -162,6 +168,22 @@ fn cmd_capture(args: &[String]) -> Result<(), String> {
             platform.capture().grab_display(id).map_err(|e| e.to_string())?
         }
         CaptureMode::Region(rect) => platform.capture().grab(rect).map_err(|e| e.to_string())?,
+        CaptureMode::RegionSelect => {
+            let primary = platform.screens().primary().map_err(|e| e.to_string())?;
+            let frame =
+                platform.capture().grab_display(primary.id).map_err(|e| e.to_string())?;
+            let size = frame.size();
+            let bounds = Rect::from_xywh(0, 0, size.width, size.height);
+            match foxshot_ui::RegionSelector::run(frame.clone(), bounds)
+                .map_err(|e| e.to_string())?
+            {
+                Some(rect) => frame.crop(rect).map_err(|e| e.to_string())?,
+                None => {
+                    println!("cancelled");
+                    return Ok(());
+                }
+            }
+        }
     };
     if let Some(path) = &output {
         write_png(path, &frame)?;
