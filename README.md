@@ -27,6 +27,22 @@ foxshot update --check
 - Upload to Cloudflare R2, Amazon S3 and free hosts, with the link placed on the clipboard
 - OCR, QR and a colour picker
 
+## Install on macOS
+
+FoxShot is a **command line tool** today — there is no window, no tray, nothing to double-click. The `.dmg` exists only as a convenience; opening the app inside it just starts Terminal running `foxshot --help`.
+
+To actually install it, download the `.pkg` for your Mac from the [latest release](https://github.com/metanetsoft/foxshot/releases) and install it. It puts the binary at `/usr/local/bin/foxshot`, so `foxshot` works in Terminal straight afterwards.
+
+The package is not signed with an Apple developer certificate, so after installing clear the quarantine flag once:
+
+```
+sudo xattr -cr /usr/local/bin/foxshot
+```
+
+(Or install by hand: unpack the `.tar.gz` and copy `foxshot` anywhere on your `PATH`.)
+
+The first time you take a capture, macOS asks for **Screen Recording** permission for your terminal. Until it is granted, a capture succeeds but returns only the wallpaper — that is macOS policy, not a bug.
+
 ## Architecture
 
 One Core, three platform adapters.

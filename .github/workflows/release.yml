@@ -112,14 +112,57 @@ jobs:
         # First real compile of the macOS adapter — this step must not be
         # skipped and has no continue-on-error on purpose.
         run: cargo build --release -p foxshot-app --target ${{ matrix.target }}
+      - name: Smoke test the freshly built binary
+        # The binary was just built on a real Mac, so run it on that Mac.
+        # Only the job whose target matches the runner's own arch can execute
+        # its binary; a cross-built binary for the other arch cannot run.
+        # `displays` and `capture` are deliberately not exercised: they need
+        # Screen Recording permission that a headless runner does not have.
+        run: |
+          set -euo pipefail
+          BIN="target/${{ matrix.target }}/release/foxshot"
+          RUNNER_ARCH="$(uname -m)"
+          if [ "$RUNNER_ARCH" != "${{ matrix.arch }}" ]; then
+            echo "skip: runner is $RUNNER_ARCH, binary targets ${{ matrix.arch }} — a cross-built binary cannot be executed here"
+            exit 0
+          fi
+          echo "== foxshot --version =="
+          "$BIN" --version
+          echo "== foxshot --help =="
+          "$BIN" --help
+          echo "== foxshot update --check =="
+          "$BIN" update --check
       - name: Compute version
         run: echo "VERSION=${VERSION#v}" >> "$GITHUB_ENV"
       - name: Assemble FoxShot.app
+        # FoxShot is a command line tool — there is no window to show. The
+        # bundle's executable is a launcher that opens Terminal running the
+        # real binary (Contents/MacOS/foxshot-bin) with --help, so opening
+        # the app visibly does something instead of exiting silently.
         run: |
           set -euo pipefail
           APP=FoxShot.app
           mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-          cp "target/${{ matrix.target }}/release/foxshot" "$APP/Contents/MacOS/foxshot"
+          cp "target/${{ matrix.target }}/release/foxshot" "$APP/Contents/MacOS/foxshot-bin"
+          chmod 755 "$APP/Contents/MacOS/foxshot-bin"
+          cat > "$APP/Contents/MacOS/foxshot" <<'LAUNCHER'
+          #!/bin/sh
+          # FoxShot is a command line tool. Opening this app starts Terminal
+          # running the real binary with --help, so it does not appear broken.
+          set -u
+          DIR="$(cd "$(dirname "$0")" && pwd)"
+          BIN="$DIR/foxshot-bin"
+          /usr/bin/osascript - "$BIN" <<'APPLESCRIPT'
+          on run argv
+              set binPath to item 1 of argv
+              tell application "Terminal"
+                  activate
+                  do script quoted form of binPath & " --help; echo; echo 'FoxShot is a command line tool — run foxshot in Terminal.'"
+              end tell
+          end run
+          APPLESCRIPT
+          LAUNCHER
+          chmod 755 "$APP/Contents/MacOS/foxshot"
           cat > "$APP/Contents/Info.plist" <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -130,7 +173,9 @@ jobs:
               <key>CFBundleName</key>
               <string>FoxShot</string>
               <key>CFBundleDisplayName</key>
-              <string>FoxShot</string>
+              <string>FoxShot (command line tool)</string>
+              <key>CFBundleGetInfoString</key>
+              <string>FoxShot is a command line tool. Opening this app runs foxshot --help in Terminal; use the foxshot command for everything.</string>
               <key>CFBundleExecutable</key>
               <string>foxshot</string>
               <key>CFBundlePackageType</key>
@@ -141,6 +186,8 @@ jobs:
               <string>${VERSION}</string>
               <key>LSMinimumSystemVersion</key>
               <string>13.0</string>
+              <key>LSUIElement</key>
+              <false/>
               <key>NSHighResolutionCapable</key>
               <true/>
               <key>NSScreenCaptureUsageDescription</key>
@@ -158,11 +205,30 @@ jobs:
           mkdir -p dist
           hdiutil create -volname FoxShot -srcfolder FoxShot.app -ov -format UDZO \
             "dist/foxshot-${VERSION}-mac-${{ matrix.arch }}.dmg"
+      - name: Build pkg installer
+        # The real installer: puts foxshot on the PATH at /usr/local/bin so
+        # the command works in Terminal straight after installing.
+        run: |
+          set -euo pipefail
+          mkdir -p dist pkgroot/usr/local/bin
+          cp "target/${{ matrix.target }}/release/foxshot" pkgroot/usr/local/bin/foxshot
+          chmod 755 pkgroot/usr/local/bin/foxshot
+          pkgbuild --root pkgroot \
+            --identifier com.metanetsoft.foxshot \
+            --version "${VERSION}" \
+            --install-location / \
+            "dist/foxshot-${VERSION}-mac-${{ matrix.arch }}.pkg"
+      - name: Build tar.gz
+        # Manual install path for people who do not want the pkg.
+        run: |
+          mkdir -p dist
+          tar -C "target/${{ matrix.target }}/release" -czf \
+            "dist/foxshot-${VERSION}-mac-${{ matrix.arch }}.tar.gz" foxshot
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.tag || github.ref_name }}
-          files: dist/*.dmg
+          files: dist/*
           fail_on_unmatched_files: true
 
   windows:
