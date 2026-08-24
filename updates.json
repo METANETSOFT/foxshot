@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "core": {
-    "version": "0.4.0",
+    "version": "0.4.1",
     "min_core": null,
     "download": null,
     "sha256": null,
@@ -9,19 +9,19 @@
   },
   "adapters": {
     "macos": {
-      "version": "0.4.0",
+      "version": "0.4.1",
       "min_core": "0.1.0",
       "download": null,
       "sha256": null
     },
     "linux": {
-      "version": "0.4.0",
+      "version": "0.4.1",
       "min_core": "0.1.0",
       "download": null,
       "sha256": null
     },
     "windows": {
-      "version": "0.4.0",
+      "version": "0.4.1",
       "min_core": "0.1.0",
       "download": null,
       "sha256": null
@@ -29,35 +29,35 @@
   },
   "modules": {
     "editor": {
-      "version": "0.4.0",
+      "version": "0.4.1",
       "min_core": "0.1.0",
       "download": null,
       "sha256": null,
       "changelog": null
     },
     "upload": {
-      "version": "0.4.0",
+      "version": "0.4.1",
       "min_core": "0.1.0",
       "download": null,
       "sha256": null,
       "changelog": null
     },
     "video": {
-      "version": "0.4.0",
+      "version": "0.4.1",
       "min_core": "0.1.0",
       "download": null,
       "sha256": null,
       "changelog": null
     },
     "ocr": {
-      "version": "0.4.0",
+      "version": "0.4.1",
       "min_core": "0.1.0",
       "download": null,
       "sha256": null,
       "changelog": null
     },
     "qr": {
-      "version": "0.4.0",
+      "version": "0.4.1",
       "min_core": "0.1.0",
       "download": null,
       "sha256": null,
